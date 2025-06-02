@@ -1,14 +1,13 @@
-<root BTCPP_format='4' main_tree_to_execute='AuctioneerTree'>
-    <BehaviorTree name = 'AuctioneerTree'>
+<root BTCPP_format = '4' main_tree_to_execute = 'MainTree'>
+    <BehaviorTree ID = 'MainTree'>
         <Sequence name = 'main_sequence'>
-            <SendRequest name = 'send_bid_request_action'/>
-
+            <SendBidRequestAction name = 'send_bid_request_action'/>
             <Fallback name = 'received_fallback'>
-                <BidsReceived name = 'bids_received_condition'/>
-                <Wait4Bids name = 'wait_for_bids_action'/>
+                <BidsReceivedCondition name = 'bids_received_condition'/>
+                <WaitForBidsAction name = 'wait_for_bids_action'/>
             </Fallback>
 
-            <Allocation name = 'allocation_action'/>
+            <AllocationAction name = 'allocation_action'/>
         </Sequence>
     </BehaviorTree>
 </root>
