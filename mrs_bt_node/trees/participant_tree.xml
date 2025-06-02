@@ -1,0 +1,20 @@
+<root BTCPP_format = '4' main_tree_to_execute = 'ParticipantTree'>
+    <BehaviorTree ID = 'ParticipantTree'>
+        <Sequence name = 'main_sequence'>
+            <Fallback name = 'request_fallback'>
+                <Received name = 'request_received_condition'/>
+                <Await name = 'await_request_action'/>
+            </Fallback>
+
+            <FormBid name = 'form_bid_action'/>
+
+            <Fallback name = 'execution_fallback'>
+                <Sequence name = 'execution_sequence'>
+                    <Selected name = 'selected_condition'/>
+                    <Execution name = 'execution_action'/>
+                </Sequence>
+                <RemainIdle name = 'remain_idle_action'/>
+            </Fallback>
+        </Sequence>
+    </BehaviorTree>
+</root>
