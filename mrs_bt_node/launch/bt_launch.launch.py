@@ -20,18 +20,33 @@ This launch file launches:
 from launch import LaunchDescription
 from launch_ros.actions import Node
 from ament_index_python.packages import get_package_share_directory
+from launch.substitutions import PathJoinSubstitution, LaunchConfiguration
+from launch.actions import DeclareLaunchArgument
 
 def generate_launch_description():
+    # paths:
+    pkg_path = get_package_share_directory('mrs_bt_node')
+
+    # launch arguments:
+    tree = PathJoinSubstitution([pkg_path, 'trees', LaunchConfiguration('tree_name')])
+    tree_arg = DeclareLaunchArgument(
+        'tree_name',
+        default_value = 'participant_tree.xml', 
+        description = 'Sets the tree at runtime'
+    )
+
+
     # nodes:
     bt_node = Node(
         package = 'mrs_bt_node',
         executable = 'bt_node',
         name = 'auction_test',
         output = 'screen',
-        parameters = [{'tree_file' : get_package_share_directory('mrs_bt_node') + '/trees/auctioneer_tree.xml'}]
+        parameters = [{'tree_file' : tree}]
     )
 
     print(f'launching!')
     return LaunchDescription([
+        tree_arg, 
         bt_node
     ])
