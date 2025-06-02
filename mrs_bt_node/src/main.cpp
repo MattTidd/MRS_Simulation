@@ -4,6 +4,12 @@
 #include <mrs_bt_node/auctioneer/bids_received_condition.hpp>
 #include <mrs_bt_node/auctioneer/wait_for_bids_action.hpp>
 #include <mrs_bt_node/auctioneer/allocation_action.hpp>
+#include <mrs_bt_node/participant/await_request_action.hpp>
+#include <mrs_bt_node/participant/execution_action.hpp>
+#include <mrs_bt_node/participant/form_bid_action.hpp>
+#include <mrs_bt_node/participant/remain_idle_action.hpp>
+#include <mrs_bt_node/participant/request_received_condition.hpp>
+#include <mrs_bt_node/participant/selected_condition.hpp>
 #include <ament_index_cpp/get_package_share_directory.hpp>
 
 int main(int argc, char** argv) {
@@ -20,13 +26,19 @@ int main(int argc, char** argv) {
         factory.registerNodeType<mrs_bt_node::WaitForBidsAction>("WaitForBidsAction");
         factory.registerNodeType<mrs_bt_node::AllocationAction>("AllocationAction");
 
+        factory.registerNodeType<mrs_bt_node::AwaitRequestAction>("AwaitRequestAction");
+        factory.registerNodeType<mrs_bt_node::ExecutionAction>("ExecutionAction");
+        factory.registerNodeType<mrs_bt_node::FormBidAction>("FormBidAction");
+        factory.registerNodeType<mrs_bt_node::RemainIdleAction>("RemainIdleAction");
+        factory.registerNodeType<mrs_bt_node::RequestReceivedCondition>("RequestReceivedCondition");
+        factory.registerNodeType<mrs_bt_node::SelectedCondition>("SelectedCondition");
+
         // get package path:
         const std::string package_share_dir = ament_index_cpp::get_package_share_directory("mrs_bt_node");
 
         // load bt from XML file using absolute path:
         const std::string tree_filename = node->declare_parameter<std::string>(
-            "tree_file",    // try this
-            package_share_dir + "/trees/auctioneer_tree.xml" // fallback to this (remove)
+            "tree_file"
         );
 
         // debug:
