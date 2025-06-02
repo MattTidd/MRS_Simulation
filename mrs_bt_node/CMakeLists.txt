@@ -8,6 +8,7 @@ endif()
 # find dependencies:
 find_package(ament_cmake REQUIRED)
 find_package(behaviortree_cpp REQUIRED)
+find_package(rclcpp REQUIRED)
 
 # include the headers:
 include_directories(
@@ -16,7 +17,11 @@ include_directories(
 
 # make the BT node executable:
 add_executable(bt_node
-  src/main.cpp 
+  src/main.cpp
+  src/auctioneer/send_bid_request_action.cpp
+  src/auctioneer/bids_received_condition.cpp
+  src/auctioneer/wait_for_bids_action.cpp
+  src/auctioneer/allocation_action.cpp
 )
 
 target_include_directories(bt_node PUBLIC
@@ -26,6 +31,8 @@ target_include_directories(bt_node PUBLIC
 
 # dependencies:
 ament_target_dependencies(bt_node
+  rclcpp
+  behaviortree_cpp
 )
 
 # install everything:
@@ -33,7 +40,7 @@ install(TARGETS bt_node
   DESTINATION lib/${PROJECT_NAME}
 )
 
-install(DIRECTORY include trees launch params maps src
+install(DIRECTORY include trees launch src
   DESTINATION share/${PROJECT_NAME}
 )
 
