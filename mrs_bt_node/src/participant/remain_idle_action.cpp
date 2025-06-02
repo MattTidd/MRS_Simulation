@@ -19,7 +19,7 @@ namespace mrs_bt_node
     // tick method:
     BT::NodeStatus RemainIdleAction::tick()
     {
-        std::cout << 'Remaining Idle...' << std::endl;
+        std::cout << "Remaining Idle..." << std::endl;
         return BT::NodeStatus::SUCCESS;
     }
 

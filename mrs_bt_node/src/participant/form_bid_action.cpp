@@ -19,7 +19,7 @@ namespace mrs_bt_node
     // tick method:
     BT::NodeStatus FormBidAction::tick()
     {
-        std::cout << 'Formulating Bid...' << std::endl;
+        std::cout << "Formulating Bid..." << std::endl;
         return BT::NodeStatus::SUCCESS;
     }
 

@@ -19,7 +19,7 @@ namespace mrs_bt_node
     // tick method:
     BT::NodeStatus RequestReceivedCondition::tick()
     {
-        std::cout << 'Checking if Request Received...' << std::endl;
+        std::cout << "Checking if Request Received..." << std::endl;
         return BT::NodeStatus::SUCCESS;
     }
 

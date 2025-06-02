@@ -19,7 +19,7 @@ namespace mrs_bt_node
     // tick method:
     BT::NodeStatus SelectedCondition::tick()
     {
-        std::cout << 'Selected!' << std::endl;
+        std::cout << "Selected!" << std::endl;
         return BT::NodeStatus::SUCCESS;
     }
 
