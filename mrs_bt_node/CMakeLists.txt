@@ -22,6 +22,13 @@ add_executable(bt_node
   src/auctioneer/bids_received_condition.cpp
   src/auctioneer/wait_for_bids_action.cpp
   src/auctioneer/allocation_action.cpp
+
+  src/participant/await_request_action.cpp
+  src/participant/execution_action.cpp
+  src/participant/form_bid_action.cpp
+  src/participant/remain_idle_action.cpp
+  src/participant/request_received_condition.cpp
+  src/participant/selected_condition.cpp
 )
 
 target_include_directories(bt_node PUBLIC
