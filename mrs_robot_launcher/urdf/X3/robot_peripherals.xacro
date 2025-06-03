@@ -8,7 +8,7 @@
         <visual>
             <origin xyz = '0 0 0' rpy = '1.570796 0 1.570796'/>
             <geometry>
-                <mesh filename = 'file://$(find sim_robot_description)/meshes/lidar.STL' scale = '0.001 0.001 0.001'/>
+                <mesh filename = 'file://$(find mrs_robot_launcher)/meshes/lidar.STL' scale = '0.001 0.001 0.001'/>
             </geometry>
             <material name = 'black'/>
         </visual>
@@ -43,7 +43,7 @@
         <visual>
             <origin xyz = '0 0 0' rpy = '0 0 0'/>
             <geometry>
-                <mesh filename = 'file://$(find sim_robot_description)/meshes/camera.STL'/>
+                <mesh filename = 'file://$(find mrs_robot_launcher)/meshes/camera.STL'/>
             </geometry>
             <material name = 'black'/>
         </visual>

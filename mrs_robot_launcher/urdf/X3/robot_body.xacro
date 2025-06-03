@@ -52,7 +52,7 @@
         <visual>
             <origin xyz = '0 0 0' rpy = '0 0 0'/>
             <geometry>
-                <mesh filename = 'file://$(find sim_robot_description)/meshes/chassis.STL'/>
+                <mesh filename = 'file://$(find mrs_robot_launcher)/meshes/chassis.STL'/>
             </geometry>
             <material name = 'green'/>
         </visual>
@@ -88,7 +88,7 @@
         <visual>
             <origin xyz = '0 0 0' rpy = '1.570796 0 0'/>
             <geometry>
-                <mesh filename = 'file://$(find sim_robot_description)/meshes/front_right_wheel.STL'/>
+                <mesh filename = 'file://$(find mrs_robot_launcher)/meshes/front_right_wheel.STL'/>
             </geometry>
             <material name = 'black'/>
         </visual>
@@ -124,7 +124,7 @@
         <visual>
             <origin xyz = '0 0 0' rpy = '1.570796 0 0'/>
             <geometry>
-                <mesh filename = 'file://$(find sim_robot_description)/meshes/front_left_wheel.STL'/>
+                <mesh filename = 'file://$(find mrs_robot_launcher)/meshes/front_left_wheel.STL'/>
             </geometry>
             <material name = 'black'/>
         </visual>
@@ -160,7 +160,7 @@
         <visual>
             <origin xyz = '0 0 0' rpy = '1.570796 0 0'/>
             <geometry>
-                <mesh filename = 'file://$(find sim_robot_description)/meshes/back_right_wheel.STL'/>
+                <mesh filename = 'file://$(find mrs_robot_launcher)/meshes/back_right_wheel.STL'/>
             </geometry>
             <material name = 'black'/>
         </visual>
@@ -196,7 +196,7 @@
         <visual>
             <origin xyz = '0 0 0' rpy = '1.570796 0 0'/>
             <geometry>
-                <mesh filename = 'file://$(find sim_robot_description)/meshes/back_left_wheel.STL'/>
+                <mesh filename = 'file://$(find mrs_robot_launcher)/meshes/back_left_wheel.STL'/>
             </geometry>
             <material name = 'black'/>
         </visual>
