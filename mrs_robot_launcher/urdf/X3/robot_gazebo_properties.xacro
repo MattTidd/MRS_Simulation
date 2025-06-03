@@ -9,55 +9,55 @@
     <xacro:property name = 'kd' value = '7500'/>
 
     <!--            LINKS          -->
-    <gazebo reference = 'base_link'>
+    <gazebo reference = '${robot_name}_base_link'>
         <material>Gazebo/Green</material>
     </gazebo>
 
-    <gazebo reference = 'front_right_wheel_link'>
+    <gazebo reference = '${robot_name}_front_right_wheel_link'>
         <material>Gazebo/Black</material>
         <pose>0 0 0 0 0 0</pose>
         <mu1 value = '${mu1}' />
         <mu2 value = '${mu2}' />
-        <fdir1 gz:expressed_in='base_link'>1 1 0</fdir1>
+        <fdir1 gz:expressed_in='${robot_name}_base_link'>1 1 0</fdir1>
         <minDepth>${minDepth}</minDepth>
         <kp>${kp}</kp>
         <kd>${kd}</kd>
     </gazebo>
 
-    <gazebo reference = 'front_left_wheel_link'>
+    <gazebo reference = '${robot_name}_front_left_wheel_link'>
         <material>Gazebo/Black</material>
         <pose>0 0 0 0 0 0</pose>
         <mu1 value = '${mu1}' />
         <mu2 value = '${mu2}' />
-        <fdir1 gz:expressed_in='base_link'>-1 1 0</fdir1>
+        <fdir1 gz:expressed_in='${robot_name}_base_link'>-1 1 0</fdir1>
         <minDepth>${minDepth}</minDepth>
         <kp>${kp}</kp>
         <kd>${kd}</kd>
     </gazebo>
 
-    <gazebo reference = 'back_right_wheel_link'>
+    <gazebo reference = '${robot_name}_back_right_wheel_link'>
         <material>Gazebo/Black</material>
         <pose>0 0 0 0 0 0</pose>
         <mu1 value = '${mu1}' />
         <mu2 value = '${mu2}' />
-        <fdir1 gz:expressed_in='base_link'>1 -1 0</fdir1>
+        <fdir1 gz:expressed_in='${robot_name}_base_link'>1 -1 0</fdir1>
         <minDepth>${minDepth}</minDepth>
         <kp>${kp}</kp>
         <kd>${kd}</kd>
     </gazebo>
 
-    <gazebo reference = 'back_left_wheel_link'>
+    <gazebo reference = '${robot_name}_back_left_wheel_link'>
         <material>Gazebo/Black</material>
         <pose>0 0 0 0 0 0</pose>
         <mu1 value = '${mu1}' />
         <mu2 value = '${mu2}' />
-        <fdir1 gz:expressed_in='base_link'>-1 -1 0</fdir1>
+        <fdir1 gz:expressed_in='${robot_name}_base_link'>-1 -1 0</fdir1>
         <minDepth>${minDepth}</minDepth>
         <kp>${kp}</kp>
         <kd>${kd}</kd>
     </gazebo>
 
-    <gazebo reference = 'lidar_link'>
+    <gazebo reference = '${robot_name}_lidar_link'>
         <material>Gazebo/Black</material>
         <sensor name = 'lidar' type = 'ray'>
             <pose> 0 0 0 0 0 0 </pose>
@@ -82,12 +82,12 @@
                     <argument>~/out:=scan</argument>
                 </ros>
                 <output_type>sensor_msgs/LaserScan</output_type>
-                <frame_name>lidar_link</frame_name>
+                <frame_name>${robot_name}_lidar_link</frame_name>
             </plugin>
         </sensor>
     </gazebo>
 
-    <gazebo reference = 'camera_link'>
+    <gazebo reference = '${robot_name}_camera_link'>
         <material>Gazebo/Black</material>
         <sensor name = 'camera' type = 'depth'>
             <pose> 0 0 0 0 0 0 </pose>
@@ -107,7 +107,7 @@
                 </clip>
             </camera>
             <plugin name = 'camera_controller' filename = 'libgazebo_ros_camera.so'>
-                <frame_name>camera_link_optical</frame_name>
+                <frame_name>${robot_name}_camera_link_optical</frame_name>
             </plugin>
         </sensor>
     </gazebo>
@@ -119,17 +119,17 @@
             <odometryTopic>odom</odometryTopic>
             <odometryFrame>odom</odometryFrame>
             <odometryRate>250.0</odometryRate>
-            <robotBaseFrame>base_link</robotBaseFrame>
+            <robotBaseFrame>${robot_name}_base_link</robotBaseFrame>
             <publish_wheel_tf>true</publish_wheel_tf>
 
             <wheel_radius>0.0325</wheel_radius>
             <base_length>0.16</base_length>
             <base_width>0.1695</base_width>
 
-            <front_right_joint>front_right_joint</front_right_joint>
-            <front_left_joint>front_left_joint</front_left_joint>
-            <rear_right_joint>back_right_joint</rear_right_joint>
-            <rear_left_joint>back_left_joint</rear_left_joint>
+            <front_right_joint>${robot_name}_front_right_joint</front_right_joint>
+            <front_left_joint>${robot_name}_front_left_joint</front_left_joint>
+            <rear_right_joint>${robot_name}_back_right_joint</rear_right_joint>
+            <rear_left_joint>${robot_name}_back_left_joint</rear_left_joint>
 
             <wheel_max_speed>7.50</wheel_max_speed>
             <wheel_acceleration>7.50</wheel_acceleration>
