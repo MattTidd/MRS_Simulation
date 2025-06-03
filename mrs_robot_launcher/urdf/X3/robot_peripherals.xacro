@@ -4,7 +4,7 @@
     <!--            PERIPHERALS & JOINTS             -->
 
     <!-- lidar link -->
-    <link name = '${robot_name}_lidar_link'>
+    <link name = '${prefix}lidar_link'>
         <visual>
             <origin xyz = '0 0 0' rpy = '1.570796 0 1.570796'/>
             <geometry>
@@ -32,14 +32,14 @@
     </link>
 
     <!-- lidar to chassis joint -->
-    <joint name = '${robot_name}_lidar_joint' type = 'fixed'>
+    <joint name = '${prefix}lidar_joint' type = 'fixed'>
         <origin xyz = '0.0405 5.25826986680105E-05 0.08285' rpy = '0 0 0'/>
-        <parent link = '${robot_name}_chassis_link'/>
-        <child link = '${robot_name}_lidar_link'/>
+        <parent link = '${prefix}chassis_link'/>
+        <child link = '${prefix}lidar_link'/>
     </joint>
 
     <!-- camera link -->
-    <link name = '${robot_name}_camera_link'>
+    <link name = '${prefix}camera_link'>
         <visual>
             <origin xyz = '0 0 0' rpy = '0 0 0'/>
             <geometry>
@@ -60,20 +60,20 @@
     </link>
 
     <!-- camera to chassis joint -->
-    <joint name = '${robot_name}_camera_joint' type = 'fixed'>
+    <joint name = '${prefix}camera_joint' type = 'fixed'>
         <origin xyz = '0.057105 1.7948E-05 0.03755' rpy = '0 0 0'/>
-        <parent link = '${robot_name}_chassis_link'/>
-        <child link = '${robot_name}_camera_link'/>
+        <parent link = '${prefix}chassis_link'/>
+        <child link = '${prefix}camera_link'/>
     </joint>
 
     <!-- optical link for camera coordinate frame -->
-    <link name = '${robot_name}_camera_link_optical'>
+    <link name = '${prefix}camera_link_optical'>
     </link>
 
     <!-- optical camera link to actual camera link joint: -->
-    <joint name = '${robot_name}_camera_optical_joint' type = 'fixed'>
+    <joint name = '${prefix}camera_optical_joint' type = 'fixed'>
         <origin xyz = '0 0 0' rpy = '-1.570796 0 -1.570796'/>
-        <parent link = '${robot_name}_camera_link'/>
-        <child link = '${robot_name}_camera_link_optical'/>
+        <parent link = '${prefix}camera_link'/>
+        <child link = '${prefix}camera_link_optical'/>
     </joint>
 </robot>

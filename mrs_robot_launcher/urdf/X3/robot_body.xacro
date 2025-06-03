@@ -44,11 +44,11 @@
 
     <!-- BASE LINK & CHASSIS LINK -->
     <!-- base link -->
-    <link name = '${robot_name}_base_link'>
+    <link name = '${prefix}base_link'>
     </link>
 
     <!-- chassis link -->
-    <link name = '${robot_name}_chassis_link'>
+    <link name = '${prefix}chassis_link'>
         <visual>
             <origin xyz = '0 0 0' rpy = '0 0 0'/>
             <geometry>
@@ -76,15 +76,15 @@
     </link>
 
     <!-- chassis to base joint -->
-    <joint name = '${robot_name}_base_joint' type = 'fixed'>
-        <parent link = '${robot_name}_base_link'/>
-        <child link = '${robot_name}_chassis_link'/>
+    <joint name = '${prefix}base_joint' type = 'fixed'>
+        <parent link = '${prefix}base_link'/>
+        <child link = '${prefix}chassis_link'/>
         <origin xyz = '0 0 0.07115' rpy = '0 0 0'/> <!-- origin offset of 0.07115 -->
     </joint>
 
     <!-- WHEEL LINKS & JOINTS -->
     <!-- front right wheel link -->
-    <link name = '${robot_name}_front_right_wheel_link'>
+    <link name = '${prefix}front_right_wheel_link'>
         <visual>
             <origin xyz = '0 0 0' rpy = '1.570796 0 0'/>
             <geometry>
@@ -111,16 +111,16 @@
     </link>
 
     <!-- front right wheel to chassis joint -->
-    <joint name = '${robot_name}_front_right_joint' type = 'continuous'>
+    <joint name = '${prefix}front_right_joint' type = 'continuous'>
         <origin xyz = '0.08 -0.08475 -0.0389' rpy = '0 0 0'/>
-        <parent link = '${robot_name}_chassis_link'/>
-        <child link = '${robot_name}_front_right_wheel_link'/>
+        <parent link = '${prefix}chassis_link'/>
+        <child link = '${prefix}front_right_wheel_link'/>
         <axis xyz = '0 1 0' rpy = '0 0 0'/>
         <dynamics damping = '${d}'/>
     </joint>
 
     <!-- front left wheel link -->
-    <link name = '${robot_name}_front_left_wheel_link'>
+    <link name = '${prefix}front_left_wheel_link'>
         <visual>
             <origin xyz = '0 0 0' rpy = '1.570796 0 0'/>
             <geometry>
@@ -147,16 +147,16 @@
     </link>
 
     <!-- front left wheel to chassis joint -->
-    <joint name = '${robot_name}_front_left_joint' type = 'continuous'>
+    <joint name = '${prefix}front_left_joint' type = 'continuous'>
         <origin xyz = '0.08 0.08475 -0.0389' rpy = '0 0 0'/>
-        <parent link = '${robot_name}_chassis_link'/>
-        <child link = '${robot_name}_front_left_wheel_link'/>
+        <parent link = '${prefix}chassis_link'/>
+        <child link = '${prefix}front_left_wheel_link'/>
         <axis xyz = '0 1 0' rpy = '0 0 0'/>
         <dynamics damping = '${d}'/>
     </joint>
 
     <!-- back right wheel link -->
-    <link name = '${robot_name}_back_right_wheel_link'>
+    <link name = '${prefix}back_right_wheel_link'>
         <visual>
             <origin xyz = '0 0 0' rpy = '1.570796 0 0'/>
             <geometry>
@@ -183,16 +183,16 @@
     </link>
 
     <!-- back right wheel to chassis joint -->
-    <joint name = '${robot_name}_back_right_joint' type = 'continuous'>
+    <joint name = '${prefix}back_right_joint' type = 'continuous'>
         <origin xyz = '-0.08 -0.08475 -0.0389' rpy = '0 0 0'/>   <!-- z was -0.03946 -->
-        <parent link = '${robot_name}_chassis_link'/>
-        <child link = '${robot_name}_back_right_wheel_link'/>
+        <parent link = '${prefix}chassis_link'/>
+        <child link = '${prefix}back_right_wheel_link'/>
         <axis xyz = '0 1 0' rpy = '0 0 0'/>
         <dynamics damping = '${d}'/>
     </joint>
 
     <!-- back left wheel link -->
-    <link name = '${robot_name}_back_left_wheel_link'>
+    <link name = '${prefix}back_left_wheel_link'>
         <visual>
             <origin xyz = '0 0 0' rpy = '1.570796 0 0'/>
             <geometry>
@@ -219,10 +219,10 @@
     </link>
 
     <!-- back left wheel to chassis joint -->
-    <joint name = '${robot_name}_back_left_joint' type = 'continuous'>
+    <joint name = '${prefix}back_left_joint' type = 'continuous'>
         <origin xyz = '-0.08 0.08475 -0.0389' rpy = '0 0 0'/> <!-- z was -0.03954 -->
-        <parent link = '${robot_name}_chassis_link'/>
-        <child link = '${robot_name}_back_left_wheel_link'/>
+        <parent link = '${prefix}chassis_link'/>
+        <child link = '${prefix}back_left_wheel_link'/>
         <axis xyz = '0 1 0' rpy = '0 0 0'/>
         <dynamics damping = '${d}'/>
     </joint>
