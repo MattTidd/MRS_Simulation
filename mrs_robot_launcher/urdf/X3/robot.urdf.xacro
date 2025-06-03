@@ -1,5 +1,7 @@
 <?xml version='1.0'?>
-<robot name = 'robot.urdf' xmlns:xacro = 'http://www.ros.org/wiki/xacro'>
+<robot name = '${robot.urdf}' xmlns:xacro = 'http://www.ros.org/wiki/xacro'>
+    <xacro:arg name = 'robot_name' default = 'robot1'/>
+    <xacro:property name = 'robot_name' value = '${arg robot_name}'/>
 
     <!-- include files -->
     <xacro:include filename = 'robot_body.xacro'/>
