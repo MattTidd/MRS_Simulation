@@ -4,7 +4,7 @@
     <!--            PERIPHERALS & JOINTS             -->
 
     <!-- lidar link -->
-    <link name = 'lidar_link'>
+    <link name = '${robot_name}_lidar_link'>
         <visual>
             <origin xyz = '0 0 0' rpy = '1.570796 0 1.570796'/>
             <geometry>
@@ -32,14 +32,14 @@
     </link>
 
     <!-- lidar to chassis joint -->
-    <joint name = 'lidar_joint' type = 'fixed'>
+    <joint name = '${robot_name}_lidar_joint' type = 'fixed'>
         <origin xyz = '0.0405 5.25826986680105E-05 0.08285' rpy = '0 0 0'/>
-        <parent link = 'chassis_link'/>
-        <child link = 'lidar_link'/>
+        <parent link = '${robot_name}_chassis_link'/>
+        <child link = '${robot_name}_lidar_link'/>
     </joint>
 
     <!-- camera link -->
-    <link name = 'camera_link'>
+    <link name = '${robot_name}_camera_link'>
         <visual>
             <origin xyz = '0 0 0' rpy = '0 0 0'/>
             <geometry>
@@ -60,20 +60,20 @@
     </link>
 
     <!-- camera to chassis joint -->
-    <joint name = 'camera_joint' type = 'fixed'>
+    <joint name = '${robot_name}_camera_joint' type = 'fixed'>
         <origin xyz = '0.057105 1.7948E-05 0.03755' rpy = '0 0 0'/>
-        <parent link = 'chassis_link'/>
-        <child link = 'camera_link'/>
+        <parent link = '${robot_name}_chassis_link'/>
+        <child link = '${robot_name}_camera_link'/>
     </joint>
 
     <!-- optical link for camera coordinate frame -->
-    <link name = 'camera_link_optical'>
+    <link name = '${robot_name}_camera_link_optical'>
     </link>
 
     <!-- optical camera link to actual camera link joint: -->
-    <joint name = 'camera_optical_joint' type = 'fixed'>
+    <joint name = '${robot_name}_camera_optical_joint' type = 'fixed'>
         <origin xyz = '0 0 0' rpy = '-1.570796 0 -1.570796'/>
-        <parent link = 'camera_link'/>
-        <child link = 'camera_link_optical'/>
+        <parent link = '${robot_name}_camera_link'/>
+        <child link = '${robot_name}_camera_link_optical'/>
     </joint>
 </robot>
