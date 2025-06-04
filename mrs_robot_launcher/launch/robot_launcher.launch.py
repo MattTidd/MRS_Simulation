@@ -19,6 +19,7 @@ This launch file brings up a prefixed robot for use in an MRS.
 """
 
 import os
+import numpy as np
 from launch import LaunchDescription
 from ament_index_python.packages import get_package_share_directory
 from launch.substitutions import Command, LaunchConfiguration, PathJoinSubstitution
@@ -33,8 +34,8 @@ def gen_robot_list(number_of_robots):
 
     for i in range(number_of_robots):
         robot_name = "robot" + str(i+1)
-        y_pos = float((i + 0.25) - 0.75*i)
-        robots.append({'name' : robot_name, 'x_pose' : 0.0, 'y_pose': 0.0, 'z_pose' : 0.01})
+        positions = np.random.uniform(-1.5, 1.5, [1,2])
+        robots.append({'name' : robot_name, 'x_pose' : positions[0,0], 'y_pose': positions[0,1], 'z_pose' : 0.0, 'yaw' : 0.0})
     
     return robots
 
@@ -97,7 +98,8 @@ def generate_launch_description():
             print("\n", robot['name'], "has position", 
                   f"x: {robot['x_pose']} | ", 
                   f"y: {robot['y_pose']} | ",
-                  f"z: {robot['z_pose']}\n")
+                  f"z: {robot['z_pose']} | ",
+                  f"yaw: {robot['yaw']}")
 
             spawner = Node(
                 package = 'gazebo_ros',
@@ -109,7 +111,8 @@ def generate_launch_description():
                     '-entity', robot['name'],
                     '-x', str(robot['x_pose']),
                     '-y', str(robot['y_pose']),
-                    '-z', str(robot['z_pose'])
+                    '-z', str(robot['z_pose']),
+                    '-Y', str(robot['yaw'])
                 ]
             )
 
