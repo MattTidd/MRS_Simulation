@@ -1,7 +1,7 @@
 <?xml version='1.0'?>
 <robot name = 'robot' xmlns:xacro = 'http://www.ros.org/wiki/xacro'>
     <xacro:arg name = "robot_name" default = "robot1"/>
-    <xacro:property name = "prefix" value = "$(arg robot_name)_"/>
+    <xacro:property name = "prefix" value = "$(arg robot_name)"/>
 
     <DEBUG_MSG value = "Loading prefix value: ${prefix}"/>
 
