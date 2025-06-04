@@ -33,8 +33,8 @@ def gen_robot_list(number_of_robots):
 
     for i in range(number_of_robots):
         robot_name = "robot" + str(i+1)
-        x_pos = float((i + 0.25) - 0.75*i)
-        robots.append({'name' : robot_name, 'x_pose' : x_pos, 'y_pose': 0.0, 'z_pose' : 0.01})
+        y_pos = float((i + 0.25) - 0.75*i)
+        robots.append({'name' : robot_name, 'x_pose' : 0.0, 'y_pose': 0.0, 'z_pose' : 0.01})
     
     return robots
 
@@ -105,8 +105,8 @@ def generate_launch_description():
                 namespace = robot['name'],
                 output = 'screen',
                 arguments = [
-                    '-topic', robot['name'] + 'robot_description',
-                    '-entity', robot_type,
+                    '-topic', 'robot_description',
+                    '-entity', robot['name'],
                     '-x', str(robot['x_pose']),
                     '-y', str(robot['y_pose']),
                     '-z', str(robot['z_pose'])
