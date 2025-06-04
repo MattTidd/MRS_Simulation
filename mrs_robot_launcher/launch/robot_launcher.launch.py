@@ -71,58 +71,15 @@ def generate_launch_description():
     # paths & params:
     pkg_path = get_package_share_directory('mrs_robot_launcher')
     xacro_path = PathJoinSubstitution([pkg_path, 'urdf', robot_type, 'robot.urdf.xacro'])
-    robot_description = Command(['xacro ' , xacro_path, ' robot_name:=', robot_name])
+    robot_description = Command(['xacro ' , xacro_path, ' robot_name:=', robot_name]) 
+    rsp_params = {'robot_description' : ParameterValue(robot_description, value_type = str), 'use_sim_time' : use_sim_time}
 
     rsp = Node(
         package = 'robot_state_publisher',
         executable = 'robot_state_publisher',
         output = 'screen',
-        parameters = [{
-            'robot_description' : robot_description,
-            'use_sim_time' : use_sim_time
-        }]
+        parameters = [rsp_params]
     )
-
-    # jsp = Node(
-    #             name = 'joint_state_publisher',
-    #             executable = 'joint_state_publisher',
-    #             output = 'screen',
-    #             parameters = [{'use_sim_time' : use_sim_time}]
-
-    #         )
-
-    # # use an opaque function to generate robot launch descriptions:
-    # def launch_robots(context):
-    #     robots = gen_robot_list(int(context.perform_substitution(num_robots)))
-    #     launch_actions = []
-
-    #     for robot in robots:
-    #         # generate a URDF with that robot name:
-    #         robot_description = Command(['xacro ', xacro_path,
-    #                                      ' robot_name:=', robot['name']
-    #                                      ])
-    #         # robot state publisher:
-    #         rsp = Node(
-    #             package = 'robot_state_publisher',
-    #             executable = 'robot_state_publisher',
-    #             namespace = robot['name'],
-    #             parameters = [{
-    #                 'robot_description' : robot_description, 
-    #                 'use_sim_time' : use_sim_time
-    #             }]
-    #         )
-
-    #         jsp = Node(
-    #             name = 'joint_state_publisher',
-    #             executable = 'joint_state_publisher',
-    #             namespace = robot['name'],
-    #             parameters = [{'use_sim_time' : use_sim_time}]
-
-    #         )
-
-    #         launch_actions.extend([rsp, jsp])
-
-    #     return launch_actions
 
     return LaunchDescription([
         robot_type_arg,
@@ -130,6 +87,4 @@ def generate_launch_description():
         num_robots_arg,
         robot_name_arg,
         rsp,
-        # jsp
-        # OpaqueFunction(function = launch_robots)
     ])
