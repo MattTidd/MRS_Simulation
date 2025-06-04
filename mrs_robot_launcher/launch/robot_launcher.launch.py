@@ -24,7 +24,8 @@ from launch import LaunchDescription
 from ament_index_python.packages import get_package_share_directory
 from launch.substitutions import Command, LaunchConfiguration, PathJoinSubstitution
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.actions import DeclareLaunchArgument, OpaqueFunction, IncludeLaunchDescription
+from launch.actions import DeclareLaunchArgument, OpaqueFunction, IncludeLaunchDescription, RegisterEventHandler
+from launch.event_handlers import OnProcessStart
 from launch_ros.actions import Node
 from launch_ros.parameter_descriptions import ParameterValue
 
@@ -86,21 +87,6 @@ def generate_launch_description():
                 parameters = [rsp_params]
             )
 
-            jsp = Node(
-                package = 'joint_state_publisher',
-                executable = 'joint_state_publisher',
-                name = 'joint_state_publisher',
-                namespace = robot['name'],
-                parameters = [{'use_sim_time' : use_sim_time}]
-
-            )
-
-            print("\n", robot['name'], "has position", 
-                  f"x: {robot['x_pose']} | ", 
-                  f"y: {robot['y_pose']} | ",
-                  f"z: {robot['z_pose']} | ",
-                  f"yaw: {robot['yaw']}")
-
             spawner = Node(
                 package = 'gazebo_ros',
                 executable = 'spawn_entity.py',
@@ -116,7 +102,14 @@ def generate_launch_description():
                 ]
             )
 
-            launch_actions.extend([rsp, jsp, spawner])
+            delayed_spawner = RegisterEventHandler(
+                event_handler = OnProcessStart(
+                    target_action = rsp,
+                    on_start = [spawner]
+                )
+            )
+
+            launch_actions.extend([rsp, delayed_spawner])
 
         return launch_actions
 
@@ -132,6 +125,6 @@ def generate_launch_description():
         robot_type_arg,
         use_sim_time_arg, 
         num_robots_arg,
-        OpaqueFunction(function = launch_robots), 
+        OpaqueFunction(function = launch_robots),
         gazebo
     ])
