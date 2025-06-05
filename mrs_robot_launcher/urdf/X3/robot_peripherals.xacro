@@ -39,41 +39,43 @@
     </joint>
 
     <!-- camera link -->
-    <link name = '${prefix}_camera_link'>
-        <visual>
-            <origin xyz = '0 0 0' rpy = '0 0 0'/>
-            <geometry>
-                <mesh filename = 'file://$(find mrs_robot_launcher)/meshes/camera.STL'/>
-            </geometry>
-            <material name = 'black'/>
-        </visual>
+    <xacro:if value = "${capability == 'depth'}">
+        <link name = '${prefix}_camera_link'>
+            <visual>
+                <origin xyz = '0 0 0' rpy = '0 0 0'/>
+                <geometry>
+                    <mesh filename = 'file://$(find mrs_robot_launcher)/meshes/camera.STL'/>
+                </geometry>
+                <material name = 'black'/>
+            </visual>
 
-        <inertial>
-            <mass value = '0.30393'/>
-            <xacro:box_inertia
-                mass = '0.30393'
-                w = '0.06'
-                h = '0.05'
-                d = '0.165'
-            />
-        </inertial>
-    </link>
+            <inertial>
+                <mass value = '0.30393'/>
+                <xacro:box_inertia
+                    mass = '0.30393'
+                    w = '0.06'
+                    h = '0.05'
+                    d = '0.165'
+                />
+            </inertial>
+        </link>
 
-    <!-- camera to chassis joint -->
-    <joint name = '${prefix}_camera_joint' type = 'fixed'>
-        <origin xyz = '0.057105 1.7948E-05 0.03755' rpy = '0 0 0'/>
-        <parent link = '${prefix}_chassis_link'/>
-        <child link = '${prefix}_camera_link'/>
-    </joint>
+        <!-- camera to chassis joint -->
+        <joint name = '${prefix}_camera_joint' type = 'fixed'>
+            <origin xyz = '0.057105 1.7948E-05 0.03755' rpy = '0 0 0'/>
+            <parent link = '${prefix}_chassis_link'/>
+            <child link = '${prefix}_camera_link'/>
+        </joint>
 
-    <!-- optical link for camera coordinate frame -->
-    <link name = '${prefix}_camera_link_optical'>
-    </link>
+        <!-- optical link for camera coordinate frame -->
+        <link name = '${prefix}_camera_link_optical'>
+        </link>
 
-    <!-- optical camera link to actual camera link joint: -->
-    <joint name = '${prefix}_camera_optical_joint' type = 'fixed'>
-        <origin xyz = '0 0 0' rpy = '-1.570796 0 -1.570796'/>
-        <parent link = '${prefix}_camera_link'/>
-        <child link = '${prefix}_camera_link_optical'/>
-    </joint>
+        <!-- optical camera link to actual camera link joint: -->
+        <joint name = '${prefix}_camera_optical_joint' type = 'fixed'>
+            <origin xyz = '0 0 0' rpy = '-1.570796 0 -1.570796'/>
+            <parent link = '${prefix}_camera_link'/>
+            <child link = '${prefix}_camera_link_optical'/>
+        </joint>
+    </xacro:if>
 </robot>
