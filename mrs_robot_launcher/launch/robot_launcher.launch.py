@@ -29,12 +29,16 @@ from launch.event_handlers import OnProcessStart
 from launch_ros.actions import Node
 from launch_ros.parameter_descriptions import ParameterValue
 
-def gen_robot_list(n_robots, buffer):
+def gen_robot_list(n_robots, buffer, capabilities):
     robots = []
     positions = []
     buffer_sq = buffer ** 2
-    is_thermal = False
-    is_depth = False
+
+    if n_robots < len(capabilities):
+        raise ValueError(f"Must have a robot for every provided capability! Given {n_robots} robots and {len(capabilities)} capabilities.")
+
+    capabilities += list(np.random.choice(capabilities, size = n_robots - len(capabilities)))
+    np.random.shuffle(capabilities)
 
     for i in range(n_robots):
         placed = False
@@ -66,23 +70,8 @@ def gen_robot_list(n_robots, buffer):
             positions.append((x_pose, y_pose))
             print(f"Warning: Placed robot at ({x_pose:.2f}, {y_pose:.2f}) without meeting the minimum distance threshold")
 
-        # capability choice:
-        cap = np.random.choice(['thermal', 'depth'])
-
-        # check value:
-        if cap == 'thermal':
-            is_thermal = True
-        elif cap == 'depth':
-            is_depth = True
-
-        # if there isn't a certain type by the end:
-        if is_depth == False and i+1 == n_robots:
-            cap = 'depth'
-            print(f'is_depth flag false at end of assignment, set cap to {cap}')
-
-        elif is_thermal == False and i+1 == n_robots:
-            cap = 'thermal'
-            print(f'is_thermal flag false at end of assignment, set cap to {cap}')
+        # assign capabilities:
+        cap = capabilities[i]
 
         # make robot list:
         robot_name = "robot" + str(i+1)
@@ -128,7 +117,9 @@ def generate_launch_description():
     # use an opaque function to generate robot launch descriptions:
     def launch_robots(context):
         # get list of robots:
-        robots = gen_robot_list(int(num_robots.perform(context)), 0.5)    # actually get the context of that variable name, turn to int
+
+        # context is used to actually get the context of that variable name, and then turn that value to an int
+        robots = gen_robot_list(int(num_robots.perform(context)), 0.5, ['thermal', 'depth'])
         launch_actions = []
 
         for robot in robots:
