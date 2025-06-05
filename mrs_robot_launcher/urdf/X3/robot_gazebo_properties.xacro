@@ -9,9 +9,18 @@
     <xacro:property name = 'kd' value = '7500'/>
 
     <!--            LINKS          -->
-    <gazebo reference = '${prefix}_chassis_link'>
-        <material>Gazebo/Green</material>
-    </gazebo>
+
+    <xacro:if value = "${capability == 'depth'}">
+        <gazebo reference = '${prefix}_chassis_link'>
+            <material>Gazebo/Blue</material>
+        </gazebo>
+    </xacro:if>
+
+    <xacro:if value = "${capability == 'thermal'}">
+        <gazebo reference = '${prefix}_chassis_link'>
+            <material>Gazebo/Red</material>
+        </gazebo>
+    </xacro:if>
 
     <gazebo reference = '${prefix}_front_right_wheel_link'>
         <material>Gazebo/Black</material>
