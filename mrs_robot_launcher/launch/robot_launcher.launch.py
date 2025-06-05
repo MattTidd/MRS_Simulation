@@ -66,23 +66,22 @@ def gen_robot_list(n_robots, buffer):
             positions.append((x_pose, y_pose))
             print(f"Warning: Placed robot at ({x_pose:.2f}, {y_pose:.2f}) without meeting the minimum distance threshold")
 
-        print(f'we are on robot {i+1}/{n_robots}')
         # capability choice:
-        cap = np.random.choice(['Thermal', 'Depth'])
+        cap = np.random.choice(['thermal', 'depth'])
 
         # check value:
-        if cap == 'Thermal':
+        if cap == 'thermal':
             is_thermal = True
-        elif cap == 'Depth':
+        elif cap == 'depth':
             is_depth = True
 
         # if there isn't a certain type by the end:
         if is_depth == False and i+1 == n_robots:
-            cap = 'Depth'
+            cap = 'depth'
             print(f'is_depth flag false at end of assignment, set cap to {cap}')
 
         elif is_thermal == False and i+1 == n_robots:
-            cap = 'Thermal'
+            cap = 'thermal'
             print(f'is_thermal flag false at end of assignment, set cap to {cap}')
 
         # make robot list:
@@ -134,7 +133,7 @@ def generate_launch_description():
 
         for robot in robots:
             # generate a URDF with that robot name:
-            robot_description = Command(['xacro ' , xacro_path, ' robot_name:=', robot['name']]) 
+            robot_description = Command(['xacro ' , xacro_path, ' robot_name:=', robot['name'], ' robot_capability:=', robot['capability']]) 
             rsp_params = {'robot_description' : ParameterValue(robot_description, value_type = str), 'use_sim_time' : use_sim_time}
 
             # robot state publisher:
@@ -152,7 +151,7 @@ def generate_launch_description():
                 output = 'screen',
                 arguments = [
                     '-topic', 'robot_description',
-                    '-entity', robot['name'],
+                    '-entity', robot['name'] + '_' + robot['capability'],
                     '-x', str(robot['x_pose']),
                     '-y', str(robot['y_pose']),
                     '-z', str(robot['z_pose']),
