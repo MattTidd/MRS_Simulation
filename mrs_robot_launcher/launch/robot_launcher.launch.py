@@ -69,15 +69,12 @@ def gen_robot_list(n_robots, buffer):
         print(f'we are on robot {i+1}/{n_robots}')
         # capability choice:
         cap = np.random.choice(['Thermal', 'Depth'])
-        print(f'chosen capability was: {cap}')
 
         # check value:
         if cap == 'Thermal':
             is_thermal = True
-            print(f"setting is_thermal flag to {is_thermal}\n")
         elif cap == 'Depth':
             is_depth = True
-            print(f"setting is_depth flag to {is_depth}\n")
 
         # if there isn't a certain type by the end:
         if is_depth == False and i+1 == n_robots:
@@ -138,7 +135,6 @@ def generate_launch_description():
         for robot in robots:
             # generate a URDF with that robot name:
             robot_description = Command(['xacro ' , xacro_path, ' robot_name:=', robot['name']]) 
-            print(f"{robot['name']} has capability {robot['capability']}")
             rsp_params = {'robot_description' : ParameterValue(robot_description, value_type = str), 'use_sim_time' : use_sim_time}
 
             # robot state publisher:
