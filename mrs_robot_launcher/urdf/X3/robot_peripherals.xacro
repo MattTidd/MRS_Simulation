@@ -38,9 +38,9 @@
         <child link = '${prefix}_lidar_link'/>
     </joint>
 
-    <!-- camera link -->
+    <!-- depth camera link -->
     <xacro:if value = "${capability == 'depth'}">
-        <link name = '${prefix}_camera_link'>
+        <link name = '${prefix}_depth_camera_link'>
             <visual>
                 <origin xyz = '0 0 0' rpy = '0 0 0'/>
                 <geometry>
@@ -60,22 +60,54 @@
             </inertial>
         </link>
 
-        <!-- camera to chassis joint -->
+        <!-- depth camera to chassis joint -->
         <joint name = '${prefix}_camera_joint' type = 'fixed'>
             <origin xyz = '0.057105 1.7948E-05 0.03755' rpy = '0 0 0'/>
             <parent link = '${prefix}_chassis_link'/>
-            <child link = '${prefix}_camera_link'/>
+            <child link = '${prefix}_depth_camera_link'/>
         </joint>
 
-        <!-- optical link for camera coordinate frame -->
-        <link name = '${prefix}_camera_link_optical'>
+        <!-- optical link for depth camera coordinate frame -->
+        <link name = '${prefix}_depth_camera_link_optical'>
         </link>
 
-        <!-- optical camera link to actual camera link joint: -->
+        <!-- optical depth camera link to actual depth camera link joint: -->
         <joint name = '${prefix}_camera_optical_joint' type = 'fixed'>
             <origin xyz = '0 0 0' rpy = '-1.570796 0 -1.570796'/>
-            <parent link = '${prefix}_camera_link'/>
-            <child link = '${prefix}_camera_link_optical'/>
+            <parent link = '${prefix}_depth_camera_link'/>
+            <child link = '${prefix}_depth_camera_link_optical'/>
         </joint>
     </xacro:if>
+
+    <!-- thermal camera link -->
+    <xacro:if value = "${capability == 'thermal'}">
+        <link name = "${prefix}_thermal_camera_link">
+            <visual>
+                <origin xyz = '0 0 0' rpy = '0 0 0'/>
+                <geometry>
+                    <mesh filename = 'file://$(find mrs_robot_launcher)/meshes/camera.STL'/>
+                </geometry>
+                <material name = 'black'/>
+            </visual>
+        </link>
+
+        <!-- thermal camera to chassis joint -->
+        <joint name = '${prefix}_thermal_camera_joint' type = 'fixed'>
+            <origin xyz = '0.057105 1.7948E-05 0.03755' rpy = '0 0 0'/>
+            <parent link = '${prefix}_chassis_link'/>
+            <child link = '${prefix}_thermal_camera_link'/>
+        </joint>
+
+        <!-- optical link for depth camera coordinate frame -->
+        <link name = '${prefix}_thermal_camera_link_optical'>
+        </link>
+
+        <!-- optical thermal camera link to actual thermal camera link joint: -->
+        <joint name = '${prefix}_camera_optical_joint' type = 'fixed'>
+            <origin xyz = '0 0 0' rpy = '-1.570796 0 -1.570796'/>
+            <parent link = '${prefix}_thermal_camera_link'/>
+            <child link = '${prefix}_thermal_camera_link_optical'/>
+        </joint>
+    </xacro:if>
+
 </robot>

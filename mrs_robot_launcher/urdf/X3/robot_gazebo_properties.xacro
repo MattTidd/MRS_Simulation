@@ -99,7 +99,7 @@
 
     <!-- for depth camera: -->
     <xacro:if value = "${capability == 'depth'}">
-        <gazebo reference = '${prefix}_camera_link'>
+        <gazebo reference = '${prefix}_depth_camera_link'>
             <material>Gazebo/Black</material>
             <sensor name = 'camera' type = 'depth'>
                 <pose> 0 0 0 0 0 0 </pose>
