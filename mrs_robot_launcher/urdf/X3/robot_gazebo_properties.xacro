@@ -97,11 +97,11 @@
         </sensor>
     </gazebo>
 
-    <!-- for depth camera: -->
+    <!-- for depth camera -->
     <xacro:if value = "${capability == 'depth'}">
         <gazebo reference = '${prefix}_depth_camera_link'>
             <material>Gazebo/Black</material>
-            <sensor name = 'camera' type = 'depth'>
+            <sensor name = 'depth_camera' type = 'depth'>
                 <pose> 0 0 0 0 0 0 </pose>
                 <visualize>true</visualize>
                 <update_rate>10</update_rate>
@@ -118,8 +118,39 @@
                         <far>8.0</far>
                     </clip>
                 </camera>
-                <plugin name = 'camera_controller' filename = 'libgazebo_ros_camera.so'>
-                    <frame_name>${prefix}_camera_link_optical</frame_name>
+                <plugin name = 'depth_camera_controller' filename = 'libgazebo_ros_camera.so'>
+                    <frame_name>${prefix}_depth_camera_link_optical</frame_name>
+                    <ros>
+                        <namespace>${prefix}</namespace>
+                    </ros>
+                </plugin>
+            </sensor>
+        </gazebo>
+    </xacro:if>
+
+    <!-- for thermal camera -->
+    <xacro:if value = "${capability == 'thermal'}">
+        <gazebo reference = '${prefix}_thermal_camera_link'>
+            <material>Gazebo/Black</material>
+            <sensor name = "thermal_cam" type = "camera">
+                <pose>0 0 0 0 0 0</pose>
+                <visualize>true</visualize>
+                <update_rate>10</update_rate>
+                <camera>
+                    <horizontal_fov>0.8499753</horizontal_fov>
+                    <vertical_fov>0.6736971</vertical_fov>
+                    <image>
+                        <format>R8G8B8</format>
+                        <width>640</width>
+                        <height>512</height>
+                    </image>
+                    <clip>
+                        <near>0.1</near>
+                        <far>8.0</far>
+                    </clip>
+                </camera>
+                <plugin name = 'thermal_camera_controller' filename = 'libgazebo_ros_camera.so'>
+                    <frame_name>${prefix}_thermal_camera_link_optical</frame_name>
                     <ros>
                         <namespace>${prefix}</namespace>
                     </ros>
@@ -130,7 +161,7 @@
 
     <!--            GAZEBO CONTROL           -->
     <gazebo>
-        <plugin name = 'omni_robot' filename = 'libgazebo_ros_omni_drive.so'>
+        <plugin name = 'omni_robot_controller' filename = 'libgazebo_ros_omni_drive.so'>
             <!-- namespacing -->
             <ros>
                 <namespace>${prefix}</namespace>
