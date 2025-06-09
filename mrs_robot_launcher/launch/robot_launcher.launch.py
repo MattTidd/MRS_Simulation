@@ -119,7 +119,8 @@ def generate_launch_description():
         # get list of robots:
 
         # context is used to actually get the context of that variable name, and then turn that value to an int
-        robots = gen_robot_list(int(num_robots.perform(context)), 0.5, ['thermal', 'depth'])
+        # robots = gen_robot_list(int(num_robots.perform(context)), 0.5, ['thermal', 'depth'])
+        robots = gen_robot_list(int(num_robots.perform(context)), 0.5, ['thermal'])
         launch_actions = []
 
         for robot in robots:
@@ -157,7 +158,8 @@ def generate_launch_description():
                 )
             )
 
-            launch_actions.extend([rsp, delayed_spawner])
+            # launch_actions.extend([rsp, delayed_spawner])
+            launch_actions.extend([rsp])
 
         return launch_actions
 
@@ -174,5 +176,5 @@ def generate_launch_description():
         use_sim_time_arg, 
         num_robots_arg,
         OpaqueFunction(function = launch_robots),
-        gazebo
+        # gazebo
     ])
