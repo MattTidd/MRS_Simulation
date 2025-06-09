@@ -73,7 +73,7 @@
 
         <!-- optical depth camera link to actual depth camera link joint: -->
         <joint name = '${prefix}_camera_optical_joint' type = 'fixed'>
-            <origin xyz = '0 0 0' rpy = '-1.570796 0 -1.570796'/>
+            <origin xyz = '0.019 0 0' rpy = '-1.570796 0 -1.570796'/>
             <parent link = '${prefix}_depth_camera_link'/>
             <child link = '${prefix}_depth_camera_link_optical'/>
         </joint>
