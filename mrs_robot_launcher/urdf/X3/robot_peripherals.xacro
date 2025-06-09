@@ -85,7 +85,7 @@
             <visual>
                 <origin xyz = '0 0 0' rpy = '0 0 0'/>
                 <geometry>
-                    <mesh filename = 'file://$(find mrs_robot_launcher)/meshes/camera.STL'/>
+                    <mesh filename = 'file://$(find mrs_robot_launcher)/meshes/thermal_cam_assembly.STL' scale = '0.001 0.001 0.001'/>
                 </geometry>
                 <material name = 'black'/>
             </visual>
@@ -93,7 +93,8 @@
 
         <!-- thermal camera to chassis joint -->
         <joint name = '${prefix}_thermal_camera_joint' type = 'fixed'>
-            <origin xyz = '0.057105 1.7948E-05 0.03755' rpy = '0 0 0'/>
+            <!-- <origin xyz = '0.057105 1.7948E-05 0.03755' rpy = '0 0 0'/> -->
+            <origin xyz = '0.08 0 0.010' rpy = '1.570796 0 1.570796'/>
             <parent link = '${prefix}_chassis_link'/>
             <child link = '${prefix}_thermal_camera_link'/>
         </joint>
@@ -104,7 +105,7 @@
 
         <!-- optical thermal camera link to actual thermal camera link joint: -->
         <joint name = '${prefix}_camera_optical_joint' type = 'fixed'>
-            <origin xyz = '0 0 0' rpy = '-1.570796 0 -1.570796'/>
+            <origin xyz = '0 0.0375 0.02' rpy = '0 0 -1.570796'/>
             <parent link = '${prefix}_thermal_camera_link'/>
             <child link = '${prefix}_thermal_camera_link_optical'/>
         </joint>
