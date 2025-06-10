@@ -87,8 +87,12 @@ def gen_robot_list(n_robots, buffer, capabilities):
     return robots
 
 def generate_launch_description():
+    # paths & params:
+    pkg_path = get_package_share_directory('mrs_robot_launcher')
+    xacro_path = PathJoinSubstitution([pkg_path, 'urdf', LaunchConfiguration('robot_type'), 'robot.urdf.xacro'])
+    gazebo_params_path = os.path.join(pkg_path, 'config', 'params_gazebo.yaml')
+
     # launch arguments:
-    robot_type = LaunchConfiguration('robot_type')
     robot_type_arg = DeclareLaunchArgument(
         'robot_type',
         default_value = 'X3',
@@ -109,17 +113,20 @@ def generate_launch_description():
         description = 'Number of robots to spawn within the MRS.'
     )
 
-    # paths & params:
-    pkg_path = get_package_share_directory('mrs_robot_launcher')
-    xacro_path = PathJoinSubstitution([pkg_path, 'urdf', robot_type, 'robot.urdf.xacro'])
-    gazebo_params_path = os.path.join(pkg_path, 'config', 'params_gazebo.yaml')
+    world = PathJoinSubstitution([pkg_path, 'worlds', LaunchConfiguration('world_name')])
+    world_arg = DeclareLaunchArgument(
+        'world_name',
+        default_value = 'empty.world',
+        description = 'Name of the world to be launched, contained in the Worlds folder.'
+    )
 
     # use an opaque function to generate robot launch descriptions:
     def launch_robots(context):
         # get list of robots:
 
         # context is used to actually get the context of that variable name, and then turn that value to an int
-        robots = gen_robot_list(int(num_robots.perform(context)), 0.5, ['thermal', 'depth'])
+        # robots = gen_robot_list(int(num_robots.perform(context)), 0.5, ['thermal', 'depth'])
+        robots = gen_robot_list(int(num_robots.perform(context)), 0.5, ['thermal'])
         launch_actions = []
 
         for robot in robots:
@@ -166,6 +173,7 @@ def generate_launch_description():
             get_package_share_directory('gazebo_ros'), 'launch', 'gazebo.launch.py')]),
             launch_arguments = {
                 # 'verbose' : 'true',
+                'world' : world,
                 'extra_gazebo_args' : '--ros-args --params-file ' + gazebo_params_path}.items()
     )
 
@@ -173,6 +181,7 @@ def generate_launch_description():
         robot_type_arg,
         use_sim_time_arg, 
         num_robots_arg,
+        world_arg,
         OpaqueFunction(function = launch_robots),
         gazebo
     ])
