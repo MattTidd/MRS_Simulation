@@ -11,8 +11,12 @@
         <color rgba = '0.1 0.1 0.1 1'/>
     </material>
 
-    <material name = 'green'>
-        <color rgba = '0 0.7 0 1'/>
+    <material name = 'red'>
+        <color rgba = '1 0 0 1'/>
+    </material>
+
+    <material name = 'blue'>
+        <color rgba = '0 0 1 1'/>
     </material>
 
     <material name = 'gray'>
@@ -54,7 +58,12 @@
             <geometry>
                 <mesh filename = 'file://$(find mrs_robot_launcher)/meshes/chassis.STL'/>
             </geometry>
-            <material name = 'green'/>
+            <xacro:if value = "${capability == 'depth'}">
+                <material name = 'blue'/>
+            </xacro:if>
+            <xacro:if value = "${capability == 'thermal'}">
+                <material name = 'red'/>
+            </xacro:if>
         </visual>
 
         <collision>
