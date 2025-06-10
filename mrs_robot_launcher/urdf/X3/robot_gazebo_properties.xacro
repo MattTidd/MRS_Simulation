@@ -149,8 +149,20 @@
                         <far>8.0</far>
                     </clip>
                 </camera>
-                <plugin name = 'thermal_camera_controller' filename = 'libgazebo_ros_camera.so'>
+                <!-- <plugin name = 'thermal_camera_controller' filename = 'libgazebo_ros_camera.so'>
+                    <camera_name>debug_cam</camera_name>
+                    <image_topic_name>/debug/image_raw</image_topic_name>
                     <frame_name>${prefix}_thermal_camera_optical_link</frame_name>
+                    <ros>
+                        <namespace>${prefix}</namespace>
+                    </ros>
+                </plugin> -->
+                <plugin name = 'gazebo_ros_cam2thermal' filename = 'libgazebo_ros_cam2thermal.so'>
+                    <ros_node_name>thermal_cam_node</ros_node_name>
+                    <image_topic_name>/${prefix}/thermal/image_raw</image_topic_name>
+                    <frame_name>thermal_camera_optical_link</frame_name>
+                    <min_temp>20.0</min_temp>
+                    <max_temp>250.0</max_temp>
                     <ros>
                         <namespace>${prefix}</namespace>
                     </ros>
