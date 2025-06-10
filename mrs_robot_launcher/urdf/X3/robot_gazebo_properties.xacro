@@ -119,7 +119,7 @@
                     </clip>
                 </camera>
                 <plugin name = 'depth_camera_controller' filename = 'libgazebo_ros_camera.so'>
-                    <frame_name>${prefix}_depth_camera_link_optical</frame_name>
+                    <frame_name>${prefix}_depth_camera_optical_link</frame_name>
                     <ros>
                         <namespace>${prefix}</namespace>
                     </ros>
@@ -150,7 +150,7 @@
                     </clip>
                 </camera>
                 <plugin name = 'thermal_camera_controller' filename = 'libgazebo_ros_camera.so'>
-                    <frame_name>${prefix}_thermal_camera_link_optical</frame_name>
+                    <frame_name>${prefix}_thermal_camera_optical_link</frame_name>
                     <ros>
                         <namespace>${prefix}</namespace>
                     </ros>
