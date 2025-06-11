@@ -46,8 +46,8 @@ def gen_robot_list(n_robots, buffer, capabilities):
 
         while not placed and tries < 1000:
             # generate candidate position:
-            x_pose = round(np.random.uniform(-1.0, 1.0), 3)
-            y_pose = round(np.random.uniform(-1.0, 1.0), 3)
+            x_pose = round(np.random.uniform(-2.0, 2.0), 3)
+            y_pose = round(np.random.uniform(-2.0, 2.0), 3)
             too_close = False
             
             # check the existing positions:
@@ -109,7 +109,7 @@ def generate_launch_description():
     num_robots = LaunchConfiguration('num_robots')
     num_robots_arg = DeclareLaunchArgument(
         'num_robots',
-        default_value = '1',
+        default_value = '2',
         description = 'Number of robots to spawn within the MRS.'
     )
 
@@ -125,8 +125,7 @@ def generate_launch_description():
         # get list of robots:
 
         # context is used to actually get the context of that variable name, and then turn that value to an int
-        # robots = gen_robot_list(int(num_robots.perform(context)), 0.5, ['thermal', 'depth'])
-        robots = gen_robot_list(int(num_robots.perform(context)), 0.5, ['thermal'])
+        robots = gen_robot_list(int(num_robots.perform(context)), 0.5, ['thermal', 'depth'])
         launch_actions = []
 
         for robot in robots:
