@@ -3,7 +3,7 @@
     <!-- ARGUMENTS AND PARAMETERS -->
     <xacro:arg name = "agent_name" default = "agent1"/>
     <xacro:arg name = "agent_type" default = "typeA"/>
-    <xacro:arg name = "visualize" default = "false"/>
+    <xacro:arg name = "visualize" default = "true"/>
 
     <xacro:property name = "prefix" value = "$(arg agent_name)"/>
     <xacro:property name = "type" value = "$(arg agent_type)"/>
@@ -18,7 +18,7 @@
     <xacro:include filename = "agent_gazebo_properties.xacro"/>
     
     <!-- if not just visualizing -->
-    <xacro:if value = "$(arg visualize)">
+    <xacro:unless value = "$(arg visualize)">
         <xacro:include filename = "agent_control.xacro"/>
-    </xacro:if>
+    </xacro:unless>
 </robot>
