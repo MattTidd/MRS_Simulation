@@ -1,0 +1,24 @@
+<?xml version = "1.0"?>
+<robot name = "agent" xmlns:xacro = "http://www.ros.org/wiki/xacro">
+    <!-- ARGUMENTS AND PARAMETERS -->
+    <xacro:arg name = "agent_name" default = "agent1"/>
+    <xacro:arg name = "agent_type" default = "typeA"/>
+    <xacro:arg name = "visualize" default = "false"/>
+
+    <xacro:property name = "prefix" value = "$(arg agent_name)"/>
+    <xacro:property name = "type" value = "$(arg agent_type)"/>
+
+    <!-- DEBUG MESSAGES -->
+    <DEBUG_MSG value = "Loading prefix with value: ${prefix}"/>
+    <DEBUG_MSG value = "Loading type with value: ${prefix}"/>
+
+    <!-- INCLUDE FILES -->
+    <xacro:include filename = "agent_body.xacro"/>
+    <xacro:include filename = "agent_peripherals.xacro"/>
+    <xacro:include filename = "agent_gazebo_properties.xacro"/>
+    
+    <!-- if not just visualizing -->
+    <xacro:if value = "$(arg visualize)">
+        <xacro:include filename = "agent_control.xacro"/>
+    </xacro:if>
+</robot>
