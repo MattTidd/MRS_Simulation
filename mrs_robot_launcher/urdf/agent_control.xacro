@@ -30,7 +30,7 @@
         <plugin name = "gz_ros2_control::GazeboSimROS2ControlPlugin" filename = "gz_ros2_control-system">
             <robot_param>robot_description</robot_param>
             <robot_param_node>robot_state_publisher</robot_param_node>
-            <parameters>$(find mrs_robot_launcher)/config/controllers.yaml</parameters>
+            <parameters>$(find mrs_robot_launcher)/config/controllers/${prefix}_controllers.yaml</parameters>
             <ros>
                 <namespace>${prefix}</namespace>
                 <remapping>diff_controller/cmd_vel:=cmd_vel</remapping>
