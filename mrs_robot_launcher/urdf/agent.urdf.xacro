@@ -9,8 +9,8 @@
     <xacro:property name = "type" value = "$(arg agent_type)"/>
 
     <!-- DEBUG MESSAGES -->
-    <DEBUG_MSG value = "Loading prefix with value: ${prefix}"/>
-    <DEBUG_MSG value = "Loading type with value: ${prefix}"/>
+    <DEBUG_MSG value = "Loading prefix with value ${prefix}"/>
+    <DEBUG_MSG value = "Loading type with value ${prefix}"/>
 
     <!-- INCLUDE FILES -->
     <xacro:include filename = "agent_body.xacro"/>
