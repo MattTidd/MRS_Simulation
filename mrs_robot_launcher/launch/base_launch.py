@@ -1,9 +1,8 @@
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument
-from launch.conditions import IfCondition, UnlessCondition
+from launch.actions import DeclareLaunchArgument, TimerAction
 from launch_ros.parameter_descriptions import ParameterValue
 from launch_ros.actions import Node
-from launch.substitutions import LaunchConfiguration, Command, PathJoinSubstitution
+from launch.substitutions import LaunchConfiguration, Command, PathJoinSubstitution, TextSubstitution, PythonExpression
 from ament_index_python.packages import get_package_share_directory
 import os
 
@@ -21,6 +20,10 @@ and the idea is that this launch file template be included and populated in a lo
 """
 
 def generate_launch_description():
+    # define the paths to be used:
+    pkg_path = get_package_share_directory("mrs_robot_launcher")
+    xacro_path = PathJoinSubstitution([pkg_path, "urdf", "agent.urdf.xacro"])
+
     # define the launch arguments:
     use_sim_time = LaunchConfiguration("use_sim_time")
     use_sim_time_arg = DeclareLaunchArgument(
@@ -71,11 +74,10 @@ def generate_launch_description():
         description = "The initial yaw of the agent on spawn, defaulting to 0.0"
     )
 
-    # define the paths to be used:
-    pkg_path = get_package_share_directory("mrs_robot_launcher")
-    xacro_path = PathJoinSubstitution([pkg_path, "urdf", "agent.urdf.xacro"])
-    bridge_path = os.path.join(pkg_path, "config", "bridges", f"{agent_name}_bridge_parameters.yaml")
-    ekf_path = os.path.join(pkg_path, "config", "ekfs", f"{agent_name}_ekf_params.yaml")
+    # need to use the passed agent_name parameter to set the path of the bridge params, ekf params, and bridge node name:
+    # bridge_path = PathJoinSubstitution([pkg_path, "config", "bridges", [agent_name, TextSubstitution(text = "_bridge_parameters.yaml")]])
+    ekf_path = PathJoinSubstitution([pkg_path, "config", "ekfs", [agent_name, TextSubstitution(text = "_ekf_params.yaml")]])
+    # bridge_name = [agent_name, "_ros_gz_bridge"]
 
     # set the required parameters:
     robot_description = Command(["xacro ", xacro_path, " agent_name:=", agent_name, " agent_type:=", agent_type, " visualize:=", visualize])
@@ -104,12 +106,12 @@ def generate_launch_description():
         output = "screen"
     )
 
-    ros_gz_bridge = Node(
-        package = "ros_gz_bridge",
-        executable = "parameter_bridge",
-        name = f"{agent_name}_ros_gz_bridge",
-        arguments = ["--ros-args", "-p", "config_file:=", bridge_path]
-    )
+    # ros_gz_bridge = Node(
+    #     package = "ros_gz_bridge",
+    #     executable = "parameter_bridge",
+    #     name = bridge_name,
+    #     arguments = ["--ros-args", "-p", ["config_file:=", bridge_path]]
+    # )
 
     diff_drive_spawner = Node(
         package = "controller_manager",
@@ -138,7 +140,7 @@ def generate_launch_description():
         # nodes:
         rsp,
         agent_spawner, 
-        ros_gz_bridge, 
+        # ros_gz_bridge, 
         diff_drive_spawner, 
         joint_broadcaster_spawner
     ])
