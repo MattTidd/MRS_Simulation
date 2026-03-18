@@ -1,0 +1,23 @@
+- direction: ROS_TO_GZ
+  gz_topic_name: agent2_cmd_vel
+  gz_type_name: gz.msgs.Twist
+  ros_topic_name: agent2/cmd_vel
+  ros_type_name: geometry_msgs/msg/TwistStamped
+
+- direction: GZ_TO_ROS
+  gz_topic_name: agent2_scan
+  gz_type_name: gz.msgs.LaserScan
+  ros_topic_name: agent2/scan
+  ros_type_name: sensor_msgs/msg/LaserScan
+  
+- direction: GZ_TO_ROS
+  gz_topic_name: agent2_scan/points
+  gz_type_name: gz.msgs.PointCloudPacked
+  ros_topic_name: agent2/scan/points
+  ros_type_name: sensor_msgs/msg/PointCloud2
+
+- direction: GZ_TO_ROS
+  gz_topic_name: agent2_imu_data
+  gz_type_name: gz.msgs.IMU
+  ros_topic_name: agent2/imu_data
+  ros_type_name: sensor_msgs/msg/Imu
