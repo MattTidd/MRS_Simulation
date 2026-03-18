@@ -3,6 +3,7 @@
     <!-- PROPERTIES -->
     <xacro:property name = "a" value = "1.0"/>          <!-- scalar used for inertia-->
     <xacro:property name = "d" value = "1.0"/>          <!-- scalar used for damping -->
+    <xacro:property name = "effort" value = "0.5"/>     <!-- scalar used for wheel effort -->
     <xacro:property name = "o" value = "0.0"/>          <!-- tuneable offset for wheel collision -->
     <xacro:property name = "c_mass" value = "2.415"/>   <!-- chassis mass in kg -->
     <xacro:property name = "w_mass" value = "0.058"/>   <!-- wheel mass in kg -->
@@ -127,7 +128,7 @@
         <child link = "${prefix}_front_right_wheel_link"/>
         <axis xyz = "0 1 0" rpy = "0 0 0"/>
         <dynamics damping = "${d}"/>
-        <limit effort = "0.05" velocity = "10.0"/>
+        <limit effort = "${effort}" velocity = "10.0"/>
     </joint>
 
     <!-- front left wheel link -->
@@ -165,7 +166,7 @@
         <child link = "${prefix}_front_left_wheel_link"/>
         <axis xyz = "0 1 0" rpy = "0 0 0"/>
         <dynamics damping = "${d}"/>
-        <limit effort = "0.05" velocity = "10.0"/>
+        <limit effort = "${effort}" velocity = "10.0"/>
     </joint>
 
     <!-- back right wheel link -->
@@ -203,7 +204,7 @@
         <child link = "${prefix}_back_right_wheel_link"/>
         <axis xyz = "0 1 0" rpy = "0 0 0"/>
         <dynamics damping = "${d}"/>
-        <limit effort = "0.05" velocity = "10.0"/>
+        <limit effort = "${effort}" velocity = "10.0"/>
     </joint>
 
     <!-- back left wheel link -->
@@ -241,7 +242,6 @@
         <child link = "${prefix}_back_left_wheel_link"/>
         <axis xyz = "0 1 0" rpy = "0 0 0"/>
         <dynamics damping = "${d}"/>
-        <limit effort = "0.05" velocity = "10.0"/>
+        <limit effort = "${effort}" velocity = "10.0"/>
     </joint>
-
 </robot>
