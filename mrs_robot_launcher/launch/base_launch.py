@@ -22,7 +22,7 @@ and the idea is that this launch file template be included and populated in a lo
 def generate_launch_description():
     # define the paths to be used:
     pkg_path = get_package_share_directory("mrs_robot_launcher")
-    xacro_path = PathJoinSubstitution([pkg_path, "urdf", "agent.urdf.xacro"])
+    xacro_path = PathJoinSubstitution([pkg_path, "urdf", "agent", "agent.urdf.xacro"])
 
     # define the launch arguments:
     use_sim_time = LaunchConfiguration("use_sim_time")

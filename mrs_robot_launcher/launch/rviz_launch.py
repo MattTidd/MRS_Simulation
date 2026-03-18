@@ -16,7 +16,7 @@ def generate_launch_description():
     # define paths:
     pkg_path = get_package_share_directory("mrs_robot_launcher")
     config_path = os.path.join(pkg_path, "config", "agent_rviz.rviz")
-    xacro_path = PathJoinSubstitution([pkg_path, "urdf", "agent.urdf.xacro"])
+    xacro_path = PathJoinSubstitution([pkg_path, "urdf", "agent", "agent.urdf.xacro"])
 
     # define the launch arguments:
     use_sim_time = LaunchConfiguration("use_sim_time")
