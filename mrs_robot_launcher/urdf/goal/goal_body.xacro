@@ -1,0 +1,29 @@
+<?xml version = "1.0"?>
+<robot xmlns:xacro = "http://www.ros.org/wiki/xacro">
+    <!-- MATERIALS -->
+    <material name = "green">
+        <color rgba = "0 1 0 0.5"/>
+    </material>
+
+    <!-- LINKS -->
+    <!-- base link -->
+    <link name = "${prefix}_base_link"/>
+
+    <!-- body link -->
+    <link name = "${prefix}_body_link">
+        <visual>
+            <origin xyz = "0 0 0.00475" rpy = "0 0 0"/>
+            <geometry>
+                <cylinder radius = "0.1" length = "0.0095"/>
+            </geometry>
+            <material name = "green"/>
+        </visual>
+    </link>
+
+    <!-- JOINTS -->
+    <joint name = "${prefix}_base_joint" type = "fixed">
+        <parent link = "${prefix}_base_link"/>
+        <child link = "${prefix}_body_link"/>
+        <origin xyz = "0 0 0" rpy = "0 0 0"/>
+    </joint>
+</robot>

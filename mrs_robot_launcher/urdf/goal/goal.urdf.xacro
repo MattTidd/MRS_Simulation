@@ -1,0 +1,13 @@
+<?xml version = "1.0"?>
+<robot name = "goal" xmlns:xacro = "http://www.ros.org/wiki/xacro">
+    <!-- ARGUMENTS AND PARAMETERS -->
+    <xacro:arg name = "goal_name" default = "goal"/>
+
+    <xacro:property name = "prefix" value = "$(arg goal_name)"/>
+
+    <!-- DEBUG MESSAGES -->
+    <DEBUG_MSG value = "Loading prefix with value ${prefix}"/>
+
+    <!-- INCLUDE FILES -->
+    <xacro:include filename = "goal_body.xacro"/>
+</robot>
