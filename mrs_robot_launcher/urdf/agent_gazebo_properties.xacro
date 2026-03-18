@@ -2,11 +2,8 @@
 <robot xmlns:xacro = "http://www.ros.org/wiki/xacro">
     <!-- PROPERTIES -->
     <xacro:property name = "mu1" value = "0.50"/>
-    <xacro:property name = "mu2" value = "0.01"/>
-    <xacro:property name = "kp" value = "1.0"/>
-    <xacro:property name = "kd" value = "1.0"/>
+    <xacro:property name = "mu2" value = "0.03"/>
     <xacro:property name = "minDepth" value = "0.0001"/>
-    <xacro:property name = "maxVel" value = "10"/>
     <xacro:property name = "piValue" value = "3.14159265359"/>
 
     <!-- MACROS -->
@@ -14,10 +11,7 @@
         <gazebo reference = "${name}">
             <mu1>${mu1}</mu1>
             <mu2>${mu2}</mu2>
-            <kp>${kp}</kp>
-            <kd>${kd}</kd>
-            <minDepth>${minDepth}</minDepth>
-            <maxVel>${maxVel}</maxVel>
+            <minDepth value = "${minDepth}"/>
             <fdir1>1 0 0</fdir1>
         </gazebo>
     </xacro:macro>
@@ -29,14 +23,9 @@
     <xacro:common_joint name = "${prefix}_back_left_joint"/>
 
     <!-- PLUGINS -->
-    <!-- sensors plugin -->
-    <gazebo>
-        <plugin name = "ignition::gazebo::systems::Sensors" filename = "ignition-gazebo-sensors-system"/>
-    </gazebo>
-
     <!-- lidar sensor -->
     <gazebo reference = "${prefix}_lidar_link">
-        <sensor name = "laser" type = "gpu_lidar">
+        <sensor name = "${prefix}_laser" type = "gpu_lidar">
             <pose>0 0 0.0093 0 0 0</pose>
             <visualize>true</visualize>
             <update_rate>10</update_rate>
@@ -53,7 +42,7 @@
                     <max>12.0</max>
                 </range>
             </lidar>
-            <topic>scan</topic>
+            <topic>${prefix}_scan</topic>
             <gz_frame_id>${prefix}_lidar_link</gz_frame_id>
         </sensor>
     </gazebo>
@@ -65,11 +54,11 @@
 
     <!-- IMU sensor -->
     <gazebo reference = "${prefix}_imu_link">
-        <sensor name = "imu_sensor" type = "imu">
+        <sensor name = "${prefix}_imu_sensor" type = "imu">
             <always_on>1</always_on>
             <update_rate>50</update_rate>
             <visualize>true</visualize>
-            <topic>imu_data</topic>
+            <topic>${prefix}_imu_data</topic>
         </sensor>
     </gazebo>
 </robot>
