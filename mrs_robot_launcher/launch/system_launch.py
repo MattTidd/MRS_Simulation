@@ -50,7 +50,7 @@ def generate_launch_description():
     # define the lists of parameters for launching:
     agent_names         = ["agent1" ,  "agent2"]
     agent_types         = ["typeA"  ,  "typeB"]
-    agent_initial_xs    = ["-3.0"   ,  "3.0"]
+    agent_initial_xs    = ["-3.0"   ,  "-3.0"]
     agent_initial_ys    = ["-3.0"   ,  "3.0"]
     agent_initial_yaws  = ["0.0"    ,  "0.0"]
 
