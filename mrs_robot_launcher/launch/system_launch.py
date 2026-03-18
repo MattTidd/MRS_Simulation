@@ -47,18 +47,15 @@ def generate_launch_description():
         description = "Name of the world to be loaded, defaulting to empty_world.sdf"
     )
     
-    # define the lists of parameters for launching:
+    # define the lists of parameters for launching agents:
     agent_names         = ["agent1" ,  "agent2"]
     agent_types         = ["typeA"  ,  "typeB"]
     agent_initial_xs    = ["-3.0"   ,  "-3.0"]
     agent_initial_ys    = ["-3.0"   ,  "3.0"]
     agent_initial_yaws  = ["0.0"    ,  "0.0"]
 
-    # agent_names         = ["agent1"]
-    # agent_types         = ["typeA"]
-    # agent_initial_xs    = ["-3.0" ]
-    # agent_initial_ys    = ["-3.0"]
-    # agent_initial_yaws  = ["0.0"]
+    # should have a seperate goal manager node probably that provides pertinent information about the goal, 
+    # and spawns and kills goals as information comes in
 
     num_agents = len(agent_names)
     delay = 2.5
