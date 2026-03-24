@@ -1,8 +1,8 @@
 <?xml version = "1.0"?>
 <robot xmlns:xacro = "http://www.ros.org/wiki/xacro">
     <!-- PROPERTIES -->
-    <xacro:property name = "mu1" value = "0.50"/>
-    <xacro:property name = "mu2" value = "0.03"/>
+    <xacro:property name = "mu1" value = "1.0"/>
+    <xacro:property name = "mu2" value = "0.3"/>
     <xacro:property name = "minDepth" value = "0.0001"/>
     <xacro:property name = "piValue" value = "3.14159265359"/>
 
@@ -28,7 +28,7 @@
         <sensor name = "${prefix}_laser" type = "gpu_lidar">
             <pose>0 0 0.0093 0 0 0</pose>
             <visualize>true</visualize>
-            <update_rate>10</update_rate>
+            <update_rate>60</update_rate>
             <lidar>
                 <scan>
                     <horizontal>
@@ -38,7 +38,7 @@
                     </horizontal>
                 </scan>
                 <range>
-                    <min>0.05</min>
+                    <min>0.13</min>
                     <max>12.0</max>
                 </range>
             </lidar>
@@ -54,9 +54,9 @@
 
     <!-- IMU sensor -->
     <gazebo reference = "${prefix}_imu_link">
-        <sensor name = "${prefix}_imu_sensor" type = "imu">
+        <sensor name = "imu_sensor" type = "imu">
             <always_on>1</always_on>
-            <update_rate>50</update_rate>
+            <update_rate>60</update_rate>
             <visualize>true</visualize>
             <topic>${prefix}_imu_data</topic>
         </sensor>
