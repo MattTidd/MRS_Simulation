@@ -7,6 +7,7 @@ from launch_ros.actions import Node
 from launch.substitutions import LaunchConfiguration, Command, PathJoinSubstitution
 from ament_index_python.packages import get_package_share_directory
 import os
+import numpy as np
 
 """
 this file is the launch file for launching the MRS, wherein the user specifies lists of parameters for each agent in the system, 
@@ -23,6 +24,7 @@ def generate_launch_description():
     pkg_path = get_package_share_directory("mrs_robot_launcher")
     template_path = PathJoinSubstitution([pkg_path, "launch", "base_launch.py"])
     gazebo_launch_path = PathJoinSubstitution([pkg_path, "launch", "gazebo_launch.py"])
+    goal_launch_path = PathJoinSubstitution([pkg_path, "launch", "goal_launch.py"])
     bridge_path = PathJoinSubstitution([pkg_path, "config", "bridges", "system_bridge_parameters.yaml"])
 
     # define the arguments for launching:
@@ -81,6 +83,22 @@ def generate_launch_description():
         # add instance of template to list of templates:
         templates.append(timed_foo)
 
+    # define the goal settings:
+    goal_name = "goal"
+    goal_type = np.random.choice(["typeA", "typeB"])
+    goal_initial_x_pos = "0.0"
+    goal_initial_y_pos = "0.0"
+
+    # launch the goal:
+    goal_launcher = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource([goal_launch_path]),
+        launch_arguments = {"use_sim_time" : use_sim_time,
+                            "goal_name" : goal_name,
+                            "goal_type" : goal_type,
+                            "goal_initial_x_pos" : goal_initial_x_pos,
+                            "goal_initial_y_pos" : goal_initial_y_pos}.items()
+    )
+
     # launch gazebo:
     gazebo = IncludeLaunchDescription(
         PythonLaunchDescriptionSource([gazebo_launch_path]),
@@ -100,5 +118,6 @@ def generate_launch_description():
         visualize_arg, 
         world_arg,  
         gazebo, 
-        ros_gz_bridge
+        ros_gz_bridge,
+        goal_launcher
     ] + templates)
