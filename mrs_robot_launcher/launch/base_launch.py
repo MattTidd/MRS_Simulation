@@ -1,8 +1,8 @@
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, TimerAction
+from launch.actions import DeclareLaunchArgument, GroupAction
 from launch_ros.parameter_descriptions import ParameterValue
-from launch_ros.actions import Node
-from launch.substitutions import LaunchConfiguration, Command, PathJoinSubstitution, TextSubstitution, PythonExpression
+from launch_ros.actions import Node, PushRosNamespace
+from launch.substitutions import LaunchConfiguration, Command, PathJoinSubstitution, TextSubstitution
 from ament_index_python.packages import get_package_share_directory
 import os
 
@@ -75,9 +75,9 @@ def generate_launch_description():
     )
 
     # need to use the passed agent_name parameter to set the path of the bridge params, ekf params, and bridge node name:
-    # bridge_path = PathJoinSubstitution([pkg_path, "config", "bridges", [agent_name, TextSubstitution(text = "_bridge_parameters.yaml")]])
     ekf_path = PathJoinSubstitution([pkg_path, "config", "ekfs", [agent_name, TextSubstitution(text = "_ekf_params.yaml")]])
-    # bridge_name = [agent_name, "_ros_gz_bridge"]
+    base_frame = [agent_name, TextSubstitution(text = "_base_link")]
+    imu_frame = [agent_name, TextSubstitution(text = "_imu_link")]
 
     # set the required parameters:
     robot_description = Command(["xacro ", xacro_path, " agent_name:=", agent_name, " agent_type:=", agent_type, " visualize:=", visualize])
@@ -106,13 +106,6 @@ def generate_launch_description():
         output = "screen"
     )
 
-    # ros_gz_bridge = Node(
-    #     package = "ros_gz_bridge",
-    #     executable = "parameter_bridge",
-    #     name = bridge_name,
-    #     arguments = ["--ros-args", "-p", ["config_file:=", bridge_path]]
-    # )
-
     diff_drive_spawner = Node(
         package = "controller_manager",
         executable = "spawner",
@@ -125,6 +118,49 @@ def generate_launch_description():
         executable = "spawner",
         namespace = agent_name,
         arguments = ["joint_broad"]
+    )
+
+    laser_scan_matcher = Node(
+        package = "rf2o_laser_odometry",
+        executable = "rf2o_laser_odometry_node",
+        name = "laser_odometry_node",
+        namespace = agent_name, 
+        output = "screen",
+        parameters = [{
+            "laser_scan_topic" : "scan",
+            "odom_topic" : "lidar_odom",
+            "publish_tf" : False,
+            "base_frame_id" : base_frame,
+            "odom_frame_id" : "odom",
+            "init_pose_from_topic" : "",
+            "freq" : 60.0}]
+    )
+
+    covariance_filter_node = Node(
+        package = "covariance_filter",
+        executable = "covariance_filter_node",
+        name = "covariance_filter",
+        output = "screen", 
+        parameters = [{"imu_frame" : imu_frame}]
+    )
+
+    covariance_filter_node = GroupAction(
+        actions = [
+            PushRosNamespace(agent_name),
+            covariance_filter_node
+        ]
+    )
+
+    ekf_node = Node(
+        package = "robot_localization",
+        executable = "ekf_node", 
+        name = "ekf_filter_node",
+        namespace = agent_name,
+        output = "screen", 
+        parameters = [ekf_path, {"use_sim_time" : use_sim_time}], 
+        remappings = [
+            ("odometry/filtered", "odom")
+        ]
     )
 
     return LaunchDescription([
@@ -140,9 +176,11 @@ def generate_launch_description():
         # nodes:
         rsp,
         agent_spawner, 
-        # ros_gz_bridge, 
         diff_drive_spawner, 
-        joint_broadcaster_spawner
+        joint_broadcaster_spawner,
+        laser_scan_matcher,
+        covariance_filter_node, 
+        ekf_node
     ])
 
 
