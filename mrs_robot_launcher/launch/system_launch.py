@@ -56,22 +56,32 @@ def generate_launch_description():
     agent_initial_ys    = ["-3.0"   ,  "3.0"]
     agent_initial_yaws  = ["0.0"    ,  "0.0"]
 
+    # agent_names         = ["agent1"]
+    # agent_types         = ["typeA"]
+    # agent_initial_xs    = ["-3.0"]
+    # agent_initial_ys    = ["-3.0"]
+    # agent_initial_yaws  = ["0.0"]
+
     # should have a seperate goal manager node probably that provides pertinent information about the goal, 
     # and spawns and kills goals as information comes in
 
     num_agents = len(agent_names)
+    a_types = np.random.permutation(agent_types)
     delay = 2.5
     templates = []
 
     # loop over the number of agents and call the base template:
     for agent in range(num_agents):
+        # pick a random type:
+        a_type = a_types[agent]
+
         # include the base_template:
         foo = IncludeLaunchDescription(
             PythonLaunchDescriptionSource([template_path]),
             launch_arguments = {"use_sim_time" : use_sim_time,
                                 "visualize" : visualize, 
                                 "agent_name" : agent_names[agent],
-                                "agent_type" : agent_types[agent],
+                                "agent_type" : a_type,
                                 "agent_initial_x_pos" : agent_initial_xs[agent],
                                 "agent_initial_y_pos" : agent_initial_ys[agent],
                                 "agent_initial_yaw" : agent_initial_yaws[agent]}.items()
