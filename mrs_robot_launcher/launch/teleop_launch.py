@@ -38,7 +38,7 @@ def generate_launch_description():
     teleop = Node(
         package = "teleop_twist_keyboard",
         executable = "teleop_twist_keyboard",
-        name = [agent_name, "_teleop_twist_keyboard"],
+        name = "teleop_twist_keyboard",
         namespace = agent_name,
         output = "screen",
         prefix = "xterm -e",
