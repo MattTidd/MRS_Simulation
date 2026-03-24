@@ -1,0 +1,109 @@
+#!/usr/bin/env python3
+import rclpy
+from rclpy.node import Node
+from sensor_msgs.msg import Imu
+from nav_msgs.msg import Odometry
+from rclpy.executors import ExternalShutdownException
+import copy
+import signal
+
+class CovFilter(Node):
+    def __init__(self):
+        super().__init__("cov_filter")
+        # parameters:
+        self.declare_parameter("imu_frame", value = "imu_link")
+        self.imu_frame = self.get_parameter("imu_frame").value
+
+        # print to terminal so I know that it is working:
+        self.get_logger().info("Covariance filter node running")
+
+        # topics that the node is subscribing to:
+        self.imu_sub = self.create_subscription(
+            Imu,
+            "imu_data", 
+            self.imu_callback,
+            10
+        )
+
+        self.lidar_sub = self.create_subscription(
+            Odometry, 
+            "lidar_odom",
+            self.lidar_callback,
+            10
+        )
+
+        # topics that the node is publishing to:
+        self.imu_pub = self.create_publisher(
+            Imu,
+            "imu_data_filtered",
+            10
+        )
+
+        self.lidar_pub = self.create_publisher(
+            Odometry, 
+            "lidar_odom_filtered",
+            10
+        )
+
+        # IMU covariances - as per https://docs.ros2.org/foxy/api/sensor_msgs/msg/Imu.html
+        # orientation covariance row majors, in the order of (roll, pitch, yaw)
+        self.imu_orientation_covariance = [1.0, 0.0, 0.0,
+                                           0.0, 1.0, 0.0,
+                                           0.0, 0.0, 1e-2]
+        # angular velocity covariance row majors, in the order of (vroll, vpitch, vyaw)
+        self.imu_angular_velocity_covariance = [1.0, 0.0, 0.0,
+                                                0.0, 1.0, 0.0,
+                                                0.0, 0.0, 1e-2]
+        # linear acceleratioin covariance row majors, in the order of (ax, ay, az)
+        self.imu_linear_acceleration_covariance = [1e-2, 0.0, 0.0,
+                                                   0.0, 1e-2, 0.0,
+                                                   0.0, 0.0, 1e-2]
+        
+        # LiDAR covariances - as per https://docs.ros2.org/foxy/api/nav_msgs/msg/Odometry.html
+        # pose covariance, in the order of (x, y, z, r, p, y)
+        self.lidar_pose_covariance = [0.1,   0.0,   0.0, 0.0, 0.0, 0.0,
+                                      0.0,    0.1,  0.0, 0.0, 0.0, 0.0,
+                                      0.0,    0.0,   1.0, 0.0, 0.0, 0.0,
+                                      0.0,    0.0,   0.0, 1.0, 0.0, 0.0,
+                                      0.0,    0.0,   0.0, 0.0, 1.0, 0.0,
+                                      0.0,    0.0,   0.0, 0.0, 0.0, 1e-2]
+        # twist covariance, in the order of (vx, vy, vz, vr, vp, vy)
+        self.lidar_twist_covariance = [1e-2, 0.0,  0.0,  0.0,  0.0,  0.0,
+                                      0.0,  1e-2,  0.0,  0.0,  0.0,  0.0,
+                                      0.0,  0.0,  1.0,  0.0,  0.0,  0.0,
+                                      0.0,  0.0,  0.0,  1.0,  0.0,  0.0,
+                                      0.0,  0.0,  0.0,  0.0,  1.0,  0.0,
+                                      0.0,  0.0,  0.0,  0.0,  0.0,  1e-3]
+
+    def imu_callback(self, msg):
+        msg_fixed = copy.deepcopy(msg)
+        msg_fixed.header.frame_id = self.imu_frame
+        msg_fixed.orientation_covariance = self.imu_orientation_covariance
+        msg_fixed.angular_velocity_covariance = self.imu_angular_velocity_covariance
+        msg_fixed.linear_acceleration_covariance = self.imu_linear_acceleration_covariance
+        self.imu_pub.publish(msg_fixed)
+
+    def lidar_callback(self, msg):
+        msg_fixed = copy.deepcopy(msg)
+        msg_fixed.pose.covariance = self.lidar_pose_covariance
+        msg_fixed.twist.covariance = self.lidar_twist_covariance
+        self.lidar_pub.publish(msg_fixed)
+
+def main(args=None):
+    rclpy.init(args=args)
+    node = CovFilter()
+
+    # catch sigterm from GUI:
+    signal.signal(signal.SIGTERM, lambda *args: rclpy.shutdown())
+
+    try:
+        rclpy.spin(node)
+    except (KeyboardInterrupt, ExternalShutdownException):
+        pass
+    finally:
+        node.destroy_node()
+        if rclpy.ok():
+            rclpy.shutdown()
+
+if __name__ == "__main__":
+    main()
