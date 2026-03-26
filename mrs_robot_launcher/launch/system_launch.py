@@ -1,12 +1,9 @@
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, TimerAction
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.conditions import IfCondition, UnlessCondition
-from launch_ros.parameter_descriptions import ParameterValue
 from launch_ros.actions import Node
-from launch.substitutions import LaunchConfiguration, Command, PathJoinSubstitution
+from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from ament_index_python.packages import get_package_share_directory
-import os
 import numpy as np
 
 """
@@ -45,22 +42,18 @@ def generate_launch_description():
     world = PathJoinSubstitution([pkg_path, "worlds", LaunchConfiguration("world")])
     world_arg = DeclareLaunchArgument(
         "world",
-        default_value = "empty_world.sdf",
-        description = "Name of the world to be loaded, defaulting to empty_world.sdf"
+        default_value = "world_1.sdf",
+        description = "Name of the world to be loaded, defaulting to world_1.sdf"
     )
     
-    # define the lists of parameters for launching agents:
-    agent_names         = ["agent1" ,  "agent2"]
-    agent_types         = ["typeA"  ,  "typeB"]
-    agent_initial_xs    = ["-3.0"   ,  "-3.0"]
-    agent_initial_ys    = ["-3.0"   ,  "3.0"]
-    agent_initial_yaws  = ["0.0"    ,  "0.0"]
-
-    # agent_names         = ["agent1"]
-    # agent_types         = ["typeA"]
-    # agent_initial_xs    = ["-3.0"]
-    # agent_initial_ys    = ["-3.0"]
-    # agent_initial_yaws  = ["0.0"]
+    # define parameters for launching agents:
+    positions = [["-3.0", "-3.0"], ["0.0", "0.0"]]  # in form [(x1, y1), (x2, y2)]
+    agent_names         = ["agent1", "agent2"]
+    agent_types         = ["typeA", "typeB"]
+    agent_initial_xs    = [str(p[0]) for p in positions]
+    agent_initial_ys    = [str(p[1]) for p in positions]
+    agent_initial_yaws  = ["0.0", "0.0"]
+    flattened_positions = [float(coord) for p in positions for coord in p]
 
     # should have a seperate goal manager node probably that provides pertinent information about the goal, 
     # and spawns and kills goals as information comes in
@@ -123,11 +116,24 @@ def generate_launch_description():
         arguments = ["--ros-args", "-p", ["config_file:=", bridge_path]]
     )
 
+    # system manager GUI:
+    system_gui = Node(
+        package = "system_gui",
+        executable = "gui_node",
+        name = "system_gui",
+        parameters = [{"positions" : flattened_positions,
+                       "agent_names" : agent_names}]
+    )
+
+    delayed_gui = TimerAction(period = delay + float(num_agents * delay),
+                              actions = [system_gui])
+
     return LaunchDescription([
         use_sim_time_arg, 
         visualize_arg, 
         world_arg,  
         gazebo, 
         ros_gz_bridge,
-        goal_launcher
+        delayed_gui,
+        # goal_launcher
     ] + templates)
