@@ -148,7 +148,7 @@ class MainWindow(QWidget):
         self.reset_finished.connect(self._enable_buttons)
 
     # define method for resetting buttons:
-    def _reset_buttons(self):
+    def _lock_buttons(self):
         # lock all buttons:
         self.agent_reset_button.setEnabled(False)
         self.randomize_goal_button.setEnabled(False)
@@ -156,10 +156,10 @@ class MainWindow(QWidget):
         self.start_sim_button.setEnabled(False)
 
         # modify text of buttons:
-        self.agent_reset_button.setText("Resetting...")
-        self.randomize_goal_button.setText("Resetting...")
-        self.sim_reset_button.setText("Resetting...")
-        self.start_sim_button.setText("Resetting...")
+        self.agent_reset_button.setText("Waiting...")
+        self.randomize_goal_button.setText("Waiting...")
+        self.sim_reset_button.setText("Waiting...")
+        self.start_sim_button.setText("Waiting...")
 
     # define method for enabling buttons:
     def _enable_buttons(self):
@@ -175,10 +175,11 @@ class MainWindow(QWidget):
         self.sim_reset_button.setText("Reset Simulation")
         self.start_sim_button.setText("Start Simulation")
 
+    ##### AGENT RESET BUTTON METHODS: #####
     # define method for agent reset button:
     def _on_agent_reset_clicked(self):
-        # reset buttons:
-        self._reset_buttons()
+        # lock the buttons:
+        self._lock_buttons()
 
         # get value of agent in menu:
         agent_name = self.agent_combo_box.currentText()
@@ -204,7 +205,7 @@ class MainWindow(QWidget):
         # call the launch file:
         self.odom_process = subprocess.Popen(["ros2", "launch", "mrs_robot_launcher", "odom_launch.py", f"agent_name:={agent_name}"])
 
-        # re-enable the button:
+        # re-enable the buttons:
         time.sleep(2)
         self.reset_finished.emit()
 
@@ -229,20 +230,64 @@ class MainWindow(QWidget):
             if pid:
                 subprocess.run(["kill", pid])
 
+    ##### START SIM BUTTON METHODS: #####
     # define method for start sim button:
     def _on_start_sim_clicked(self):
-        print("starting simulation!")
+        # lock the buttons:
+        self._lock_buttons()
 
+        # use another thread to call the start sim function:
+        threading.Thread(target = self._start_sim_process, args = (), daemon = True).start()
+
+    # define actual start simulation method:
+    def _start_sim_process(self):
+        # testing:
+
+        # re-enable the buttons:
+        time.sleep(2)
+        self.reset_finished.emit()
+
+    ##### RANDOMIZE GOAL BUTTON METHODS: #####
     # define method for randomize goal button:
     def _on_goal_randomize_clicked(self):
+        # lock the buttons:
+        self._lock_buttons()
+
+        # use another thread to call the goal randomize function:
+        threading.Thread(target = self._goal_randomize_process, args = (), daemon = True).start()
+
+    # define actual goal randomize method:
+    def _goal_randomize_process(self):
+        # testing:
         print("randomizing goal!")
 
+        # re-enable the buttons:
+        time.sleep(2)
+        self.reset_finished.emit() 
+    
+    ##### RESET SIMULATION BUTTON METHODS: #####
     # define method for reset simulation button:
     def _on_sim_reset_clicked(self):
+        # lock the buttons:
+        self._lock_buttons()
+
+        # use another thread to call the goal randomize function:
+        threading.Thread(target = self._sim_reset_process, args = (), daemon = True).start()
+
+    # define actual simulation reset method:
+    def _sim_reset_process(self):
+        # testing:
         print("resetting simulation!")
+
+        # re-enable the buttons:
+        time.sleep(2)
+        self.reset_finished.emit() 
 
 # define main execution of node:
 def main():
+    # start the GUI:
+    app = QApplication(sys.argv)
+    
     # initialize rclpy:
     rclpy.init()
 
