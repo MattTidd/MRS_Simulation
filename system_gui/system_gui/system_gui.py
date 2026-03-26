@@ -26,15 +26,30 @@ class GuiNode(Node):
         # display to user when node has started:
         self.get_logger().info("GUI node started")
 
+        # declare agent position parameters:
+        self.declare_parameter("positions", [0.0])
+        self.declare_parameter("agent_names", [""])
+        
+        # add parameter to the class:
+        flat = self.get_parameter("positions").value
+        names = self.get_parameter("agent_names").value
+        positions = [[flat[i], flat[i+1]] for i in range(0, len(flat), 2)]
+
+        # form the positions:
+        self.agent_positions = dict(zip(names, positions))
+
 # class for the actual GUI:
 class MainWindow(QWidget):
     # signal for updating GUI buttons from threads:
     reset_finished = pyqtSignal()
 
     # window constructor:
-    def __init__(self):
+    def __init__(self, agent_positions : dict):
         # inherit from parent:
         super().__init__()
+
+        # set positions:
+        self.positions = agent_positions
 
         # set title of window:
         self.setWindowTitle("ROS2 MRS GUI")
@@ -189,9 +204,8 @@ class MainWindow(QWidget):
 
     # define actual agent reset method:
     def _reset_agent_process(self, agent_name : str):
-        # dummy position for testing:
-        x = "-3.0"
-        y = "-3.0"
+        pos = self.positions[agent_name]
+        x, y = pos[0], pos[1]
 
         # move the position of the agent passed:
         subprocess.run(["ign", "service", "-s", "/world/world_1/set_pose",
@@ -294,13 +308,14 @@ def main():
     # instantiate the node:
     node = GuiNode()
 
+    # grab the positions:
+    agent_positions = node.agent_positions
+
     # spin ROS2 in a background thread so it doesn't block the GUI:
     ros_thread = threading.Thread(target = rclpy.spin, args = (node, ), daemon = True)
     ros_thread.start()
 
-    # start the GUI:
-    app = QApplication(sys.argv)
-    window = MainWindow()
+    window = MainWindow(agent_positions = agent_positions)
     window.show()
 
     # allow python to read signal every 500ms:
