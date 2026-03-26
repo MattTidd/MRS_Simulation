@@ -36,8 +36,40 @@ class MainWindow(QWidget):
         # set title of window:
         self.setWindowTitle("ROS2 MRS GUI")
 
+        # set size of GUI:
+        self.setFixedWidth(500)
+        self.setFixedHeight(300)
+
+        # set a style sheet:
+        self.setStyleSheet("""
+            QPushButton {
+                padding: 6px 14px;
+                border-radius: 4px;
+                background-color: #00B7FF;
+                color: white;
+                font-weight: bold;
+            }         
+            QPushButton:hover {
+                background-color: #005fa3;
+            }
+            QComboBox {
+                padding: 4px;
+                min-width: 120px;
+            }
+            QLabel {
+                font-weight: bold;
+                font-size: 14px;
+            }
+                           
+            QGroupBox {
+                font-weight: bold;
+                font-size:   14px;
+            }
+        """)
+
         # main layout manager:
         main_layout = QVBoxLayout()
+        main_layout.setSpacing(15)
 
         # instantiate the child layouts:
         group1 = QGroupBox("Agent Settings")    # this is the group for the agent settings
@@ -58,11 +90,11 @@ class MainWindow(QWidget):
         result = subprocess.run(["ros2", "node", "list"], capture_output = True, text = True)
 
         # pull number of agents:
-        agents = list(set(re.findall(r'/(agent\d+)/', result.stdout)))
+        agents = sorted(list(set(re.findall(r'/(agent\d+)/', result.stdout))))
 
         # add these agents to the combo box:
-        for agent in sorted(agents):
-            self.agent_combo_box.addItem(agent)
+        # for agent in sorted(agents):
+        self.agent_combo_box.addItems(agents)
         
         # add combo box to the grid:
         grid1.addWidget(self.agent_combo_box, 1, 0, alignment = Qt.AlignCenter)
@@ -86,6 +118,7 @@ class MainWindow(QWidget):
         self.randomize_goal_button.clicked.connect(self._on_goal_randomize_clicked)
         grid2.addWidget(self.randomize_goal_button, 1, 1, alignment = Qt.AlignCenter)
 
+        ##### grid 3 - randomization and resetting buttons: ##### 
         # button for resetting the sim:
         self.sim_reset_button = QPushButton("Reset Simulation")
         self.sim_reset_button.clicked.connect(self._on_sim_reset_clicked)
@@ -109,7 +142,7 @@ class MainWindow(QWidget):
         # lock all buttons:
         self.agent_reset_button.setEnabled(False)
         self.start_sim_button.setEnabled(False)
-        self.randomize
+        # self.randomize
 
         # get value of agent in menu:
         agent_name = self.agent_combo_box.currentText()
