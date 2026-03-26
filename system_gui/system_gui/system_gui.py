@@ -11,7 +11,7 @@ from rclpy.node import Node
 from ament_index_python.packages import get_package_share_directory 
 
 # gui-specific packages:
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, QLabel, QLineEdit, QComboBox, QPushButton
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QGridLayout, QLabel, QComboBox, QPushButton, QGroupBox
 from PyQt5.QtCore import QTimer, Qt, pyqtSignal 
 from qtwidgets import AnimatedToggle
 
@@ -40,14 +40,19 @@ class MainWindow(QWidget):
         main_layout = QVBoxLayout()
 
         # instantiate the child layouts:
-        grid1 = QGridLayout()   # this is for the agent drop down and reset
-        row1 = QHBoxLayout()    # this is for the run simulation button
-        grid2 = QGridLayout()   # this is for randomization and resetting
+        group1 = QGroupBox("Agent Settings")    # this is the group for the agent settings
+        grid1 = QGridLayout()                   # this is a grid to hold the agent drop down and reset button
+        group1.setLayout(grid1)                 # set the layout to be the grid
+
+        group2 = QGroupBox("Goal Settings")     # this is the group for the goal settings
+        grid2 = QGridLayout()                   # this is for the goal type drop down and randomize
+        group2.setLayout(grid2)                 # set the layout to be the grid
+
+        group3 = QGroupBox("Simulation Settings")   # this is the group for the simulation settings
+        grid3 = QGridLayout()                       # this is a grid for resetting and running simulation buttons
+        group3.setLayout(grid3)                     # set the layout to be the grid
 
         ##### grid 1 - agent related settings: #####
-        # add the label for the dropdown:
-        grid1.addWidget(QLabel("Agent"), 0, 0, alignment = Qt.AlignCenter)
-        
         # add the dropdown:
         self.agent_combo_box = QComboBox()      # instantiate the combo_box
         result = subprocess.run(["ros2", "node", "list"], capture_output = True, text = True)
@@ -67,34 +72,49 @@ class MainWindow(QWidget):
         self.agent_reset_button.clicked.connect(self._on_agent_reset_clicked)
         grid1.addWidget(self.agent_reset_button, 1, 1, alignment = Qt.AlignCenter)
 
-        ##### row 1 - button for starting simulation: ##### 
-        self.start_sim_button = QPushButton("Start Simulation")
-        self.start_sim_button.clicked.connect(self._on_start_sim_clicked)
-        row1.addWidget(self.start_sim_button)
+        ##### grid 2 - goal related settings: ##### 
+        # add the dropdown:
+        self.goal_combo_box = QComboBox()
+        goal_types = ["typeA", "typeB"]
+        self.goal_combo_box.addItems(goal_types)
 
-        ##### grid 2 - randomization and resetting buttons: ##### 
+        # add combo box to the grid:
+        grid2.addWidget(self.goal_combo_box, 1, 0, alignment = Qt.AlignCenter)
+
         # button for randomizing the goal:
         self.randomize_goal_button = QPushButton("Randomize Goal")
         self.randomize_goal_button.clicked.connect(self._on_goal_randomize_clicked)
-        grid2.addWidget(self.randomize_goal_button, 0, 0, alignment = Qt.AlignCenter)
+        grid2.addWidget(self.randomize_goal_button, 1, 1, alignment = Qt.AlignCenter)
 
         # button for resetting the sim:
         self.sim_reset_button = QPushButton("Reset Simulation")
         self.sim_reset_button.clicked.connect(self._on_sim_reset_clicked)
-        grid2.addWidget(self.sim_reset_button, 0, 1, alignment = Qt.AlignCenter)
+        grid3.addWidget(self.sim_reset_button, 1, 0, alignment = Qt.AlignCenter)
+
+        # button for starting sim:
+        self.start_sim_button = QPushButton("Start Simulation")
+        self.start_sim_button.clicked.connect(self._on_start_sim_clicked)
+        grid3.addWidget(self.start_sim_button, 1, 1, alignment = Qt.AlignCenter)
 
         # add grids/rows to main layout:
-        main_layout.addLayout(grid1)
-        main_layout.addLayout(row1)
-        main_layout.addLayout(grid2)
+        main_layout.addWidget(group1)
+        main_layout.addWidget(group2)
+        main_layout.addWidget(group3)
     
         # apply the layout:
         self.setLayout(main_layout)
 
     # define method for agent reset button:
     def _on_agent_reset_clicked(self):
+        # lock all buttons:
+        self.agent_reset_button.setEnabled(False)
+        self.start_sim_button.setEnabled(False)
+        self.randomize
+
         # get value of agent in menu:
         agent_name = self.agent_combo_box.currentText()
+
+    
         print(f"resetting {agent_name}!")
 
     # define method for start sim button:
