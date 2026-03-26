@@ -28,6 +28,9 @@ class GuiNode(Node):
 
 # class for the actual GUI:
 class MainWindow(QWidget):
+    # signal for updating GUI buttons from threads:
+    reset_finished = pyqtSignal()
+
     # window constructor:
     def __init__(self):
         # inherit from parent:
@@ -48,6 +51,11 @@ class MainWindow(QWidget):
                 background-color: #00B7FF;
                 color: white;
                 font-weight: bold;
+                min-width: 120px;
+                max-width: 120px;
+                min-height: 20px;
+                max-height: 20px;
+                margin: 0px;
             }         
             QPushButton:hover {
                 background-color: #005fa3;
@@ -93,7 +101,6 @@ class MainWindow(QWidget):
         agents = sorted(list(set(re.findall(r'/(agent\d+)/', result.stdout))))
 
         # add these agents to the combo box:
-        # for agent in sorted(agents):
         self.agent_combo_box.addItems(agents)
         
         # add combo box to the grid:
@@ -137,18 +144,90 @@ class MainWindow(QWidget):
         # apply the layout:
         self.setLayout(main_layout)
 
-    # define method for agent reset button:
-    def _on_agent_reset_clicked(self):
+        # connect signals:
+        self.reset_finished.connect(self._enable_buttons)
+
+    # define method for resetting buttons:
+    def _reset_buttons(self):
         # lock all buttons:
         self.agent_reset_button.setEnabled(False)
+        self.randomize_goal_button.setEnabled(False)
+        self.sim_reset_button.setEnabled(False)
         self.start_sim_button.setEnabled(False)
-        # self.randomize
+
+        # modify text of buttons:
+        self.agent_reset_button.setText("Resetting...")
+        self.randomize_goal_button.setText("Resetting...")
+        self.sim_reset_button.setText("Resetting...")
+        self.start_sim_button.setText("Resetting...")
+
+    # define method for enabling buttons:
+    def _enable_buttons(self):
+        # unlock all buttons:
+        self.agent_reset_button.setEnabled(True)
+        self.randomize_goal_button.setEnabled(True)
+        self.sim_reset_button.setEnabled(True)
+        self.start_sim_button.setEnabled(True)
+
+        # modify text of buttons:
+        self.agent_reset_button.setText("Reset Agent")
+        self.randomize_goal_button.setText("Randomize Goal")
+        self.sim_reset_button.setText("Reset Simulation")
+        self.start_sim_button.setText("Start Simulation")
+
+    # define method for agent reset button:
+    def _on_agent_reset_clicked(self):
+        # reset buttons:
+        self._reset_buttons()
 
         # get value of agent in menu:
         agent_name = self.agent_combo_box.currentText()
 
-    
-        print(f"resetting {agent_name}!")
+        # use another thread to call reset function:
+        threading.Thread(target = self._reset_agent_process, args = (agent_name, ), daemon = True).start()
+
+    # define actual agent reset method:
+    def _reset_agent_process(self, agent_name : str):
+        # dummy position for testing:
+        x = "-3.0"
+        y = "-3.0"
+
+        # move the position of the agent passed:
+        subprocess.run(["ign", "service", "-s", "/world/world_1/set_pose",
+                        "--reqtype", "ignition.msgs.Pose",
+                        "--reptype", "ignition.msgs.Boolean", 
+                        "--timeout", "2000",
+                        "--req", f"name: '{agent_name}', position: {{x: {x}, y: {y}, z: {0.0}}}"])
+        
+        self._kill_namespaced_nodes(agent_name = agent_name)
+
+        # call the launch file:
+        self.odom_process = subprocess.Popen(["ros2", "launch", "mrs_robot_launcher", "odom_launch.py", f"agent_name:={agent_name}"])
+
+        # re-enable the button:
+        time.sleep(2)
+        self.reset_finished.emit()
+
+    # define method for killing nodes based on namespace:
+    def _kill_namespaced_nodes(self, agent_name : str):
+        # executables:
+        nodes = ["ekf_node", "covariance_filter_node", "rf2o_laser_odom"]
+
+        # for every executable:
+        for executable in nodes:
+            # find the executable that corresponds to that agent:
+            result = subprocess.run(
+                ["pgrep", "-f", f"{executable}.*__ns:=/{agent_name}"],
+                capture_output = True,
+                text = True
+            )
+
+            # strip down to the PID:
+            pid = result.stdout.strip()
+
+            # if the process exists, kill it
+            if pid:
+                subprocess.run(["kill", pid])
 
     # define method for start sim button:
     def _on_start_sim_clicked(self):
