@@ -1,10 +1,10 @@
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, GroupAction
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
+from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.parameter_descriptions import ParameterValue
-from launch_ros.actions import Node, PushRosNamespace
+from launch_ros.actions import Node
 from launch.substitutions import LaunchConfiguration, Command, PathJoinSubstitution, TextSubstitution
 from ament_index_python.packages import get_package_share_directory
-import os
 
 """
 this file is the base launch template for an agent in the MRS. from here, the following namespaced nodes are launched:
@@ -23,6 +23,7 @@ def generate_launch_description():
     # define the paths to be used:
     pkg_path = get_package_share_directory("mrs_robot_launcher")
     xacro_path = PathJoinSubstitution([pkg_path, "urdf", "agent", "agent.urdf.xacro"])
+    odom_launch_path = PathJoinSubstitution([pkg_path, "launch", "odom_launch.py"])
 
     # define the launch arguments:
     use_sim_time = LaunchConfiguration("use_sim_time")
@@ -74,11 +75,6 @@ def generate_launch_description():
         description = "The initial yaw of the agent on spawn, defaulting to 0.0"
     )
 
-    # need to use the passed agent_name parameter to set the path of the bridge params, ekf params, and bridge node name:
-    ekf_path = PathJoinSubstitution([pkg_path, "config", "ekfs", [agent_name, TextSubstitution(text = "_ekf_params.yaml")]])
-    base_frame = [agent_name, TextSubstitution(text = "_base_link")]
-    imu_frame = [agent_name, TextSubstitution(text = "_imu_link")]
-
     # set the required parameters:
     robot_description = Command(["xacro ", xacro_path, " agent_name:=", agent_name, " agent_type:=", agent_type, " visualize:=", visualize])
     rsp_parameters = {"robot_description": ParameterValue(robot_description, value_type = str), "use_sim_time" : use_sim_time}
@@ -120,47 +116,10 @@ def generate_launch_description():
         arguments = ["joint_broad"]
     )
 
-    laser_scan_matcher = Node(
-        package = "rf2o_laser_odometry",
-        executable = "rf2o_laser_odometry_node",
-        name = "laser_odometry_node",
-        namespace = agent_name, 
-        output = "screen",
-        parameters = [{
-            "laser_scan_topic" : "scan",
-            "odom_topic" : "lidar_odom",
-            "publish_tf" : False,
-            "base_frame_id" : base_frame,
-            "odom_frame_id" : "odom",
-            "init_pose_from_topic" : "",
-            "freq" : 60.0}]
-    )
-
-    covariance_filter_node = Node(
-        package = "covariance_filter",
-        executable = "covariance_filter_node",
-        name = "covariance_filter",
-        output = "screen", 
-        parameters = [{"imu_frame" : imu_frame}]
-    )
-
-    covariance_filter_node = GroupAction(
-        actions = [
-            PushRosNamespace(agent_name),
-            covariance_filter_node
-        ]
-    )
-
-    ekf_node = Node(
-        package = "robot_localization",
-        executable = "ekf_node", 
-        name = "ekf_filter_node",
-        namespace = agent_name,
-        output = "screen", 
-        parameters = [ekf_path, {"use_sim_time" : use_sim_time}], 
-        remappings = [
-            ("odometry/filtered", "odom")
-        ]
+    odom_nodes = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource([odom_launch_path]),
+        launch_arguments = {"use_sim_time" : use_sim_time,
+                            "agent_name" : agent_name}.items()
     )
 
     return LaunchDescription([
@@ -178,9 +137,7 @@ def generate_launch_description():
         agent_spawner, 
         diff_drive_spawner, 
         joint_broadcaster_spawner,
-        laser_scan_matcher,
-        covariance_filter_node, 
-        ekf_node
+        odom_nodes
     ])
 
 
