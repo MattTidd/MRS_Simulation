@@ -104,12 +104,12 @@ class MainWindow(QWidget):
         self.agent_combo_box.addItems(agents)
         
         # add combo box to the grid:
-        grid1.addWidget(self.agent_combo_box, 1, 0, alignment = Qt.AlignCenter)
+        grid1.addWidget(self.agent_combo_box, 0, 0, alignment = Qt.AlignCenter)
 
         # add the button for resetting the agent to the grid:
         self.agent_reset_button = QPushButton("Reset Agent")
         self.agent_reset_button.clicked.connect(self._on_agent_reset_clicked)
-        grid1.addWidget(self.agent_reset_button, 1, 1, alignment = Qt.AlignCenter)
+        grid1.addWidget(self.agent_reset_button, 0, 1, alignment = Qt.AlignCenter)
 
         ##### grid 2 - goal related settings: ##### 
         # add the dropdown:
@@ -118,23 +118,23 @@ class MainWindow(QWidget):
         self.goal_combo_box.addItems(goal_types)
 
         # add combo box to the grid:
-        grid2.addWidget(self.goal_combo_box, 1, 0, alignment = Qt.AlignCenter)
+        grid2.addWidget(self.goal_combo_box, 0, 0, alignment = Qt.AlignCenter)
 
         # button for randomizing the goal:
         self.randomize_goal_button = QPushButton("Randomize Goal")
         self.randomize_goal_button.clicked.connect(self._on_goal_randomize_clicked)
-        grid2.addWidget(self.randomize_goal_button, 1, 1, alignment = Qt.AlignCenter)
+        grid2.addWidget(self.randomize_goal_button, 0, 1, alignment = Qt.AlignCenter)
 
         ##### grid 3 - randomization and resetting buttons: ##### 
         # button for resetting the sim:
         self.sim_reset_button = QPushButton("Reset Simulation")
         self.sim_reset_button.clicked.connect(self._on_sim_reset_clicked)
-        grid3.addWidget(self.sim_reset_button, 1, 0, alignment = Qt.AlignCenter)
+        grid3.addWidget(self.sim_reset_button, 0, 0, alignment = Qt.AlignCenter)
 
         # button for starting sim:
         self.start_sim_button = QPushButton("Start Simulation")
         self.start_sim_button.clicked.connect(self._on_start_sim_clicked)
-        grid3.addWidget(self.start_sim_button, 1, 1, alignment = Qt.AlignCenter)
+        grid3.addWidget(self.start_sim_button, 0, 1, alignment = Qt.AlignCenter)
 
         # add grids/rows to main layout:
         main_layout.addWidget(group1)
