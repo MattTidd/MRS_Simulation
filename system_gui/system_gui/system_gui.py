@@ -332,17 +332,9 @@ class MainWindow(QWidget):
         # lock the buttons:
         self._lock_buttons()
 
-        # use another thread to call the goal randomize function:
-        threading.Thread(target = self._sim_reset_process, args = (), daemon = True).start()
-
-    # define actual simulation reset method:
-    def _sim_reset_process(self):
-        # testing:
-        print("resetting simulation!")
-
-        # re-enable the buttons:
-        time.sleep(2)
-        self.reset_finished.emit() 
+        # use another thread to call the reset simulation function:
+        for agent_name in self.positions:
+            threading.Thread(target = self._reset_agent_process, args = (agent_name, ), daemon = True).start()
 
 # define main execution of node:
 def main():
