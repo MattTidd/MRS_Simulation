@@ -2,6 +2,7 @@
 import sys
 import re
 import os
+import random
 import time
 import threading
 import signal
@@ -214,7 +215,7 @@ class MainWindow(QWidget):
                         "--timeout", "2000",
                         "--req", f"name: '{agent_name}', position: {{x: {x}, y: {y}, z: {0.0}}}"])
         
-        self._kill_namespaced_nodes(agent_name = agent_name)
+        self._kill_namespaced_nodes(namespace = agent_name)
 
         # call the launch file:
         self.odom_process = subprocess.Popen(["ros2", "launch", "mrs_robot_launcher", "odom_launch.py", f"agent_name:={agent_name}"])
@@ -224,25 +225,39 @@ class MainWindow(QWidget):
         self.reset_finished.emit()
 
     # define method for killing nodes based on namespace:
-    def _kill_namespaced_nodes(self, agent_name : str):
+    def _kill_namespaced_nodes(self, namespace : str, node = None):
         # executables:
         nodes = ["ekf_node", "covariance_filter_node", "rf2o_laser_odom"]
 
-        # for every executable:
-        for executable in nodes:
-            # find the executable that corresponds to that agent:
+        if node:
             result = subprocess.run(
-                ["pgrep", "-f", f"{executable}.*__ns:=/{agent_name}"],
+                ["pgrep", "-f", f"{node}.*__ns:=/{namespace}"],
                 capture_output = True,
                 text = True
             )
 
-            # strip down to the PID:
+            # strip down to PID:
             pid = result.stdout.strip()
 
             # if the process exists, kill it
             if pid:
                 subprocess.run(["kill", pid])
+        else:
+            # for every executable:
+            for executable in nodes:
+                # find the executable that corresponds to that agent:
+                result = subprocess.run(
+                    ["pgrep", "-f", f"{executable}.*__ns:=/{namespace}"],
+                    capture_output = True,
+                    text = True
+                )
+
+                # strip down to the PID:
+                pid = result.stdout.strip()
+
+                # if the process exists, kill it
+                if pid:
+                    subprocess.run(["kill", pid])
 
     ##### START SIM BUTTON METHODS: #####
     # define method for start sim button:
@@ -267,14 +282,46 @@ class MainWindow(QWidget):
         # lock the buttons:
         self._lock_buttons()
 
+        goal_positions = [(-2, 3), (-2, 2), (-2, 1), (-2, 0), (-2, -1), (-2, -3),
+                          (-3, 1), (-3, -1), (-3, -2), (-1, -3), (-1, -2), (-1, -1),
+                          (-1, 1), (-1, 2), (0, 2), (0, 1), (0, 0), (0, -1), (1, 3), 
+                          (1, 2), (1, 0), (1, -1), (1, -2), (1, -3), (2, 2), (2, 1),
+                          (2, 0), (2, -2), (3, 3), (3, 2), (3, 1), (3, 0), (3, -1),
+                          (3, -2), (3, -3)]
+        
+        goal_position = random.choice(goal_positions)
+
+        goal_type = self.goal_combo_box.currentText()
+
         # use another thread to call the goal randomize function:
-        threading.Thread(target = self._goal_randomize_process, args = (), daemon = True).start()
+        threading.Thread(target = self._goal_randomize_process, args = (goal_position, goal_type), daemon = True).start()
 
     # define actual goal randomize method:
-    def _goal_randomize_process(self):
-        # testing:
-        print("randomizing goal!")
+    def _goal_randomize_process(self, goal_positions, goal_type : str):
+        # going to have to delete the current goal and spawn it somewhere else, based on the sampled position
+        # also need to make it match the type the user has selected.
 
+        # pull the values needed from the goal positions list:
+        goal_x, goal_y = goal_positions[0], goal_positions[1]
+
+        # delete the goal state publisher:
+        self._kill_namespaced_nodes(namespace = "goal", node = "robot_state_pub")
+
+        # despawn the goal body in the simulation:
+        subprocess.run(["ign", "service", "-s", "/world/world_1/remove",
+                        "--reqtype", "ignition.msgs.Entity",
+                        "--reptype", "ignition.msgs.Boolean",
+                        "--timeout", "2000",
+                        "--req", f"name: 'goal' type: MODEL"])
+        
+        # relaunch goal:
+        subprocess.Popen(["ros2", "launch", "mrs_robot_launcher", "goal_launch.py", 
+                          "use_sim_time:=true",
+                          "goal_name:=goal", 
+                          f"goal_type:={goal_type}",
+                          f"goal_initial_x_pos:={goal_x}",
+                          f"goal_initial_y_pos:={goal_y}"])
+        
         # re-enable the buttons:
         time.sleep(2)
         self.reset_finished.emit() 
@@ -301,7 +348,7 @@ class MainWindow(QWidget):
 def main():
     # start the GUI:
     app = QApplication(sys.argv)
-    
+
     # initialize rclpy:
     rclpy.init()
 
