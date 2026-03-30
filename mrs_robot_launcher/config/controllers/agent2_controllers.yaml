@@ -31,7 +31,7 @@ agent2/diff_controller:
 
     # ros parameters:
     base_frame_id: agent2_base_link
-    odom_frame_id: odom
+    odom_frame_id: wheel_odom
     enable_odom_tf: false
     open_loop: false
     publish_rate: 30.0
