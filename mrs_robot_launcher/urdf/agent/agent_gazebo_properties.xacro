@@ -9,18 +9,18 @@
     <!-- MACROS -->
     <xacro:macro name = "common_joint" params = "name">
         <gazebo reference = "${name}">
-            <mu1>${mu1}</mu1>
-            <mu2>${mu2}</mu2>
+            <mu1 value = "${mu1}"/>
+            <mu2 value = "${mu2}"/>
             <minDepth value = "${minDepth}"/>
             <fdir1>1 0 0</fdir1>
         </gazebo>
     </xacro:macro>
 
     <!-- GAZEBO -->
-    <xacro:common_joint name = "${prefix}_front_right_joint"/>
-    <xacro:common_joint name = "${prefix}_front_left_joint"/>
-    <xacro:common_joint name = "${prefix}_back_right_joint"/>
-    <xacro:common_joint name = "${prefix}_back_left_joint"/>
+    <xacro:common_joint name = "${prefix}_front_right_wheel_link"/>
+    <xacro:common_joint name = "${prefix}_front_left_wheel_link"/>
+    <xacro:common_joint name = "${prefix}_back_right_wheel_link"/>
+    <xacro:common_joint name = "${prefix}_back_left_wheel_link"/>
 
     <!-- PLUGINS -->
     <!-- lidar sensor -->
@@ -56,7 +56,7 @@
     <gazebo reference = "${prefix}_imu_link">
         <sensor name = "imu_sensor" type = "imu">
             <always_on>1</always_on>
-            <update_rate>60</update_rate>
+            <update_rate>50</update_rate>
             <visualize>true</visualize>
             <topic>${prefix}_imu_data</topic>
         </sensor>
