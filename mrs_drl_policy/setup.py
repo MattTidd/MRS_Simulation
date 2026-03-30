@@ -39,8 +39,8 @@ setup(
 
     entry_points={
         'console_scripts': [
-            "policy_node = mrs_drl_policy.policy_node:main" ,
-            "goal_client = mrs_drl_policy.goal_client.main"
+            "policy_node = mrs_drl_policy.policy_node:main",
+            "goal_client = mrs_drl_policy.goal_client:main"
         ],
     },
 )
