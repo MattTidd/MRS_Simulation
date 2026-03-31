@@ -6,12 +6,13 @@ from geometry_msgs.msg import Quaternion, PoseStamped, TwistStamped
 from rclpy.action import ActionServer, CancelResponse, GoalResponse
 from rclpy.action.server import ServerGoalHandle
 from rclpy.executors import MultiThreadedExecutor 
-from mrs_drl_interfaces.action import NavigateToGoal
+from drl_interfaces.action import NavigateToGoal
 import numpy as np
 import torch, torch.nn as nn
 from stable_baselines3 import TD3, SAC
 from ament_index_python.packages import get_package_share_directory
 import os
+import sys
 import pickle
 import time
 import copy
@@ -34,14 +35,14 @@ class DRLPolicyNode(Node):
         self.declare_parameter('goal_timeout', 30.0)
 
         # add parameters to class:
-        self.agent_name                 =   self.get_parameter("agent_name").value
-        self.default_goal_tolerance     =   self.get_parameter('goal_tolerance').value
-        self.default_obstacle_tolerance =   self.get_parameter('obstacle_tolerance').value
-        self.model_name                 =   self.get_parameter('model_name').value
-        self.model_type                 =   self.model_name.split('_')[0]
-        self.max_lin_vel                =   self.get_parameter('max_lin_vel').value
-        self.max_angular_vel            =   self.get_parameter('max_angular_vel').value
-        self.goal_timeout               =   self.get_parameter('goal_timeout').value
+        self.agent_name                     =   self.get_parameter("agent_name").value
+        self.default_goal_tolerance         =   self.get_parameter('goal_tolerance').value
+        self.default_obstacle_tolerance     =   self.get_parameter('obstacle_tolerance').value
+        self.model_name                     =   self.get_parameter('model_name').value
+        self.model_type                     =   self.model_name.split('_')[0]
+        self.max_lin_vel                    =   self.get_parameter('max_lin_vel').value
+        self.max_angular_vel                =   self.get_parameter('max_angular_vel').value
+        self.goal_timeout                   =   self.get_parameter('goal_timeout').value
 
         # get the paths:
         pkg_dir             =    get_package_share_directory("mrs_drl_policy")
@@ -54,12 +55,20 @@ class DRLPolicyNode(Node):
 
         # load the model, if available:
         if self.model_type == "TD3":
-            model = TD3.load(model_path, device = self.device)
+            try:
+                model = TD3.load(model_path, device = self.device)
+            except FileNotFoundError:
+                print("No such model!")
+                sys.exit(0)
         elif self.model_type == "SAC":
-            model = SAC.load(model_path, device = self.device)
+            try:
+                model = SAC.load(model_path, device = self.device)
+            except FileNotFoundError:
+                print("No such model!")
+                sys.exit(0)
         
         # get the policy from the model, set to evaluation (inference):
-        self.policy = model.policy
+        self.policy = model.policy.actor
         self.policy.eval()
 
         # load the observation normalization stats:
@@ -81,10 +90,10 @@ class DRLPolicyNode(Node):
         self.d_safe                 =   0.5
         self.lidar_idx_threshold    =   4
 
-        self.rew_head_approach_scaled   =    0      ;   self.rew_head_approach_scale = 200.0
-        self.rew_dist_approach_scaled   =    0      ;   self.rew_dist_approach_scale = 200.0
-        self.rew_obs_dist_scaled        =    0      ;   self.rew_obs_dist_scale = 0.5
-        self.rew_obs_align_scaled       =    0      ;   self.rew_obs_align_scale = 0.5
+        self.rew_head_approach_scaled   =    0      ;   self.rew_head_approach_scale    =   200.0
+        self.rew_dist_approach_scaled   =    0      ;   self.rew_dist_approach_scale    =   200.0
+        self.rew_obs_dist_scaled        =    0      ;   self.rew_obs_dist_scale         =   0.5
+        self.rew_obs_align_scaled       =    0      ;   self.rew_obs_align_scale        =   0.5
         self.rew_time                   =  -0.5
 
         # define variables for storing the state values pulled from simulation:
@@ -92,11 +101,11 @@ class DRLPolicyNode(Node):
         self.latest_scan: LaserScan     |   None = None
 
         # instantiate subscribers:
-        self.odom_sub = self.create_subscription(Odometry, f"/{self.agent_name}/odom", self.odom_callback, 10)
-        self.lidar_sub = self.create_subscription(LaserScan, f"/{self.agent_name}/scan", self.lidar_callback, 10)
+        self.odom_sub   =   self.create_subscription(Odometry, f"/{self.agent_name}/odom", self.odom_callback, 10)
+        self.lidar_sub  =   self.create_subscription(LaserScan, f"/{self.agent_name}/scan", self.lidar_callback, 10)
 
         # instantiate publishers:
-        self.cmd_pub = self.create_publisher(TwistStamped, f"/{self.agent_name}/cmd_vel", 10)
+        self.cmd_pub    =   self.create_publisher(TwistStamped, f"/{self.agent_name}/cmd_vel", 10)
 
         # set active goal handle:
         self._current_goal_handle: ServerGoalHandle     |   None = None
