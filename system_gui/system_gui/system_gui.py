@@ -305,7 +305,7 @@ class MainWindow(QWidget):
                                                 "-p", f"agent_name:={agent_name}"], start_new_session = True)
         
         # launch the goal client:
-        self.goal_process = subprocess.Popen(["ros2", "run", "mrs_drl_policy", "goal_client", str(dx), str(dy), "0.1"])
+        self.goal_process = subprocess.Popen(["ros2", "run", "mrs_drl_policy", "goal_client", str(dx), str(dy), "0.125"])
 
         # use another thread to call the monitor sim function:
         threading.Thread(target = self._monitor_sim_process, args = (), daemon = True).start()
