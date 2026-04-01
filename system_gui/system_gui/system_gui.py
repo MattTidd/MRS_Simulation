@@ -44,6 +44,9 @@ class MainWindow(QWidget):
     # signal for updating GUI buttons from threads:
     reset_finished = pyqtSignal()
 
+    # set the initial goal position to be zero:
+    goal_position = [0, 0]
+
     # window constructor:
     def __init__(self, agent_positions : dict):
         # inherit from parent:
@@ -57,7 +60,7 @@ class MainWindow(QWidget):
 
         # set size of GUI:
         self.setFixedWidth(500)
-        self.setFixedHeight(300)
+        self.setFixedHeight(350)
 
         # set a style sheet:
         self.setStyleSheet("""
@@ -283,12 +286,36 @@ class MainWindow(QWidget):
         # lock the buttons:
         self._lock_buttons()
 
-        # use another thread to call the start sim function:
-        threading.Thread(target = self._start_sim_process, args = (), daemon = True).start()
+        # get the agent that the user wants to be using currently:
+        agent_name = self.agent_combo_box.currentText()
+
+        # get the model that the user wants to be using currently:
+        model_name = self.model_combo_box.currentText()
+
+        # get the distance that the agent is from the goal:
+        start_position = self.positions[agent_name]
+
+        print(f"goal is at x:{type(self.goal_position[0])}, agent is at x: {type(start_position[0])}")
+        dx = self.goal_position[0] - int(start_position[0])
+        dy = self.goal_position[1] - int(start_position[1])
+
+        # want to spin up the policy node for that agent:
+        self.policy_process = subprocess.Popen(["ros2", "run", "mrs_drl_policy", "policy_node", 
+                                                "--ros-args", "-p", f"model_name:={model_name}",
+                                                "-p", f"agent_name:={agent_name}"], start_new_session = True)
+        
+        # launch the goal client:
+        self.goal_process = subprocess.Popen(["ros2", "run", "mrs_drl_policy", "goal_client", str(dx), str(dy), "0.1"])
+
+        # use another thread to call the monitor sim function:
+        threading.Thread(target = self._monitor_sim_process, args = (), daemon = True).start()
 
     # define actual start simulation method:
-    def _start_sim_process(self):
-        # testing:
+    def _monitor_sim_process(self):
+        # on completion, kill nodes:
+        self.goal_process.wait()                                            # wait for the goal process to auto complete
+        os.killpg(os.getpgid(self.policy_process.pid), signal.SIGTERM)      # once goal process stops, kill policy process
+        self.policy_process.wait()                                          # wait for it to die
 
         # re-enable the buttons:
         time.sleep(2)
@@ -300,19 +327,19 @@ class MainWindow(QWidget):
         # lock the buttons:
         self._lock_buttons()
 
-        goal_positions = [(-2, 3), (-2, 2), (-2, 1), (-2, 0), (-2, -1), (-2, -3),
-                          (-3, 1), (-3, -1), (-3, -2), (-1, -3), (-1, -2), (-1, -1),
-                          (-1, 1), (-1, 2), (0, 2), (0, 1), (0, 0), (0, -1), (1, 3), 
-                          (1, 2), (1, 0), (1, -1), (1, -2), (1, -3), (2, 2), (2, 1),
-                          (2, 0), (2, -2), (3, 3), (3, 2), (3, 1), (3, 0), (3, -1),
-                          (3, -2), (3, -3)]
+        goal_positions = [[-2, 3], [-2, 2],  [-2, 1],  [-2, 0],  [-2, -1], [-2, -3],
+                          [-3, 1], [-3, -1], [-3, -2], [-1, -3], [-1, -2], [-1, -1],
+                          [-1, 1], [-1, 2],  [0, 2],   [0, 1],   [0, 0],   [0, -1],  [1, 3], 
+                          [1, 2],  [1, 0],   [1, -1],  [1, -2],  [1, -3],  [2, 2],   [2, 1],
+                          [2, 0],  [2, -2],  [3, 3],   [3, 2],   [3, 1],   [3, 0],   [3, -1],
+                          [3, -2], [3, -3]]
         
-        goal_position = random.choice(goal_positions)
+        self.goal_position = random.choice(goal_positions)
 
         goal_type = self.goal_combo_box.currentText()
 
         # use another thread to call the goal randomize function:
-        threading.Thread(target = self._goal_randomize_process, args = (goal_position, goal_type), daemon = True).start()
+        threading.Thread(target = self._goal_randomize_process, args = (self.goal_position, goal_type), daemon = True).start()
 
     # define actual goal randomize method:
     def _goal_randomize_process(self, goal_positions, goal_type : str):
