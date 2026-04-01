@@ -96,17 +96,34 @@ class MainWindow(QWidget):
         main_layout.setSpacing(15)
 
         # instantiate the child layouts:
-        group1 = QGroupBox("Agent Settings")    # this is the group for the agent settings
+        group0 = QGroupBox("Model Settings:")   # this is the group for the model settings
+        grid0 = QGridLayout()                   # this is a grid to hold the model drop down
+        group0.setLayout(grid0)                 # set the layout to be the grid
+
+        group1 = QGroupBox("Agent Settings:")   # this is the group for the agent settings
         grid1 = QGridLayout()                   # this is a grid to hold the agent drop down and reset button
         group1.setLayout(grid1)                 # set the layout to be the grid
 
-        group2 = QGroupBox("Goal Settings")     # this is the group for the goal settings
+        group2 = QGroupBox("Goal Settings:")    # this is the group for the goal settings
         grid2 = QGridLayout()                   # this is for the goal type drop down and randomize
         group2.setLayout(grid2)                 # set the layout to be the grid
 
-        group3 = QGroupBox("Simulation Settings")   # this is the group for the simulation settings
+        group3 = QGroupBox("Simulation Settings:")  # this is the group for the simulation settings
         grid3 = QGridLayout()                       # this is a grid for resetting and running simulation buttons
         group3.setLayout(grid3)                     # set the layout to be the grid
+
+        ##### grid 0 - model related settings: #####
+        self.model_combo_box = QComboBox()                          # instantiate the combo box
+        node_path = get_package_share_directory("mrs_drl_policy")   # get the path of the package
+        model_path = os.path.join(node_path, "policy")              # get the path of the models
+
+        # for every model in the directory:
+        for model in sorted(os.listdir(model_path)):
+            # add the model to the combo box:
+            self.model_combo_box.addItem(model)
+
+        # add the combo box to the grid:
+        grid0.addWidget(self.model_combo_box, 0, 0, alignment = Qt.AlignCenter)
 
         ##### grid 1 - agent related settings: #####
         # add the dropdown:
@@ -153,6 +170,7 @@ class MainWindow(QWidget):
         grid3.addWidget(self.start_sim_button, 0, 1, alignment = Qt.AlignCenter)
 
         # add grids/rows to main layout:
+        main_layout.addWidget(group0)
         main_layout.addWidget(group1)
         main_layout.addWidget(group2)
         main_layout.addWidget(group3)
