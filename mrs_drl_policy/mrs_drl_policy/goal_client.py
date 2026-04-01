@@ -3,7 +3,7 @@ import rclpy
 from rclpy.action import ActionClient
 from rclpy.node import Node
 from rclpy.task import Future
-from drl_interfaces.action import NavigateToGoal
+from mrs_drl_interfaces.action import NavigateToGoal
 from geometry_msgs.msg import PoseStamped
 
 # define the goal client node class:

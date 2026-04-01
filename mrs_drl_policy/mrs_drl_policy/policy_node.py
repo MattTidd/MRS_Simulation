@@ -6,7 +6,7 @@ from geometry_msgs.msg import Quaternion, PoseStamped, TwistStamped
 from rclpy.action import ActionServer, CancelResponse, GoalResponse
 from rclpy.action.server import ServerGoalHandle
 from rclpy.executors import MultiThreadedExecutor 
-from drl_interfaces.action import NavigateToGoal
+from mrs_drl_interfaces.action import NavigateToGoal
 import numpy as np
 import torch, torch.nn as nn
 from stable_baselines3 import TD3, SAC
