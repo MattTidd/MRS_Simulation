@@ -24,6 +24,7 @@ setup(
     },
     entry_points={
         'console_scripts': [
+            "bt_node = mrs_behaviour.bt_node:main"
         ],
     },
 )
