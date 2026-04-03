@@ -1,0 +1,3 @@
+string agent_name
+float32 suitability
+string capability
