@@ -19,11 +19,13 @@ launches:
 
 def generate_launch_description():
     # define the paths:
-    pkg_path = get_package_share_directory("mrs_robot_launcher")
-    template_path = PathJoinSubstitution([pkg_path, "launch", "base_launch.py"])
-    gazebo_launch_path = PathJoinSubstitution([pkg_path, "launch", "gazebo_launch.py"])
-    goal_launch_path = PathJoinSubstitution([pkg_path, "launch", "goal_launch.py"])
-    bridge_path = PathJoinSubstitution([pkg_path, "config", "bridges", "system_bridge_parameters.yaml"])
+    pkg_path                =    get_package_share_directory("mrs_robot_launcher")
+    bt_pkg_path             =    get_package_share_directory("mrs_bt_handler")
+    template_path           =    PathJoinSubstitution([pkg_path, "launch", "base_launch.py"])
+    bt_launch_path          =    PathJoinSubstitution([bt_pkg_path, "launch", "bt_launch.py"])
+    gazebo_launch_path      =    PathJoinSubstitution([pkg_path, "launch", "gazebo_launch.py"])
+    goal_launch_path        =    PathJoinSubstitution([pkg_path, "launch", "goal_launch.py"])
+    bridge_path             =    PathJoinSubstitution([pkg_path, "config", "bridges", "system_bridge_parameters.yaml"])
 
     # define the arguments for launching:
     use_sim_time = LaunchConfiguration("use_sim_time")
@@ -63,8 +65,9 @@ def generate_launch_description():
     a_types = np.random.permutation(agent_types)
     delay = 2.5
     templates = []
+    bts = []
 
-    # loop over the number of agents and call the base template:
+    # loop over the number of agents:
     for agent in range(num_agents):
         # pick a random type:
         a_type = a_types[agent]
@@ -86,6 +89,21 @@ def generate_launch_description():
 
         # add instance of template to list of templates:
         templates.append(timed_foo)
+
+        # include the BT node per agent:
+        bar = IncludeLaunchDescription(
+            PythonLaunchDescriptionSource([bt_launch_path]),
+            launch_arguments = {"agent_name" : agent_names[agent],
+                                "agent_type" : a_type,
+                                "num_agents" : str(num_agents),
+                                }.items()
+        )
+
+        timed_bar = TimerAction(period = delay + float(agent * delay),
+                                actions = [bar])
+        
+        # add instance of bt node to list of bt nodes:
+        bts.append(timed_bar)
 
     # define the goal settings:
     goal_name = "goal"
@@ -135,6 +153,8 @@ def generate_launch_description():
         world_arg,  
         gazebo, 
         ros_gz_bridge,
-        delayed_gui,
+        # delayed_gui,
         goal_launcher
-    ] + templates)
+    ] + templates 
+    + bts
+    )
