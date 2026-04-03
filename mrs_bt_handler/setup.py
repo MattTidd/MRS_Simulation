@@ -1,4 +1,6 @@
 from setuptools import find_packages, setup
+import os
+from glob import glob
 
 package_name = 'mrs_bt_handler'
 
@@ -10,6 +12,9 @@ setup(
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
+        ('share/' + package_name + '/launch', glob('launch/*.py')),
+        ('share/' + package_name + '/trees', glob('trees/*.py')),
+        ('share/' + package_name + '/suitability_model', glob('suitability_model/*')),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
@@ -24,7 +29,7 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            "bt_node = mrs_behaviour.bt_node:main"
+            "bt_node = mrs_bt_handler.bt_node:main"
         ],
     },
 )
