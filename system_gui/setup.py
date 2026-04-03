@@ -19,7 +19,8 @@ setup(
     license='Apache-2.0',
     entry_points={
         'console_scripts': [
-            "gui_node = system_gui.system_gui:main"
+            "system_gui_node = system_gui.system_gui:main",
+            "bt_gui_node = system_gui.bt_gui:main"
         ],
     },
 )
