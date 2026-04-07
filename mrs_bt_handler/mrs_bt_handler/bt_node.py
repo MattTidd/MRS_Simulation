@@ -73,7 +73,7 @@ class BTNode(Node):
 
             # create a subscriber for each of the agents in the system:
             self.bid_subs[name] = self.create_subscription(
-                Bid, f"{name}/bid",
+                Bid, f"/{name}/bid",
                 lambda msg, n = name: self._bid_callback(msg, n), 10
             )
 
@@ -86,13 +86,14 @@ class BTNode(Node):
 
         ##### build and start the behaviour tree: #####
         self.tree = create_tree(node = self, model_path = self.model_path)
+        self.tree.setup(timeout = 2)
         self.tree_timer = self.create_timer(0.1, self._tick_tree)   # tick the tree at 10Hz
         self.get_logger().info(f"BT node started for {self.agent_name}")
 
     # define goal callback method:
     def _goal_callback(self, msg : Goal):
         # let the user know that the goal has been received:
-        self.get_logger().info(f"Goal received at: ({msg.pose.position.x:.2f}, {msg.pose.position.y:.2f})")
+        self.get_logger().info(f"Goal received at: ({msg.pose.pose.position.x:.2f}, {msg.pose.pose.position.y:.2f})")
 
         # add the goal pose to the class:
         self.goal = msg.pose
