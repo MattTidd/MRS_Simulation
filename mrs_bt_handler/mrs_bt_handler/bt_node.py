@@ -54,6 +54,7 @@ class BTNode(Node):
         self.load_history:          float                       =     0.0       # load history (number of tasks completed thus far)
         self.all_bids:              dict                        =     {}        # dictionary of form {agent_name : suitability_score}
         self.simulation_started:    bool                        =     False     # flag for whether the simulation has started or not
+        self.new_goal:              bool                        =     False     # flag for whether a new goal has arrived or not
         self.policy_process                                     =     None      # handle for the policy subprocess
         self.goal_process                                       =     None      # handle for the goal subprocess
 
@@ -123,6 +124,9 @@ class BTNode(Node):
 
         # reset the list of bids upon receiving a new goal:
         self.all_bids = {}
+
+        # flag for new goal:
+        self.new_goal = True
 
     # define the odometry callback method:
     def _odom_callback(self, msg : Odometry):
@@ -200,7 +204,7 @@ class BTNode(Node):
         # clear goal:
         self.goal = None
 
-    # define method for spinning policy node up:
+    # define method for spinning the navigation policy and goal nodes up:
     def spin_up_policy(self):
         # if there is no active policy process:
         if self.policy_process is None or self.policy_process.poll() is not None:
@@ -231,6 +235,11 @@ class BTNode(Node):
 
             # set the policy process to None:
             self.policy_process = None
+
+            # print to user:
+            self.get_logger().info("Policy process killed.")
+        else:
+            self.get_logger().warn("kill_policy method called but no active process found.")
 
 # define the main function:
 def main():
