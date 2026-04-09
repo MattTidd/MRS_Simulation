@@ -69,6 +69,7 @@ class ComputeAndPublishBid(py_trees.behaviour.Behaviour):
         self.model_path         =    os.path.join(model_path, "ann_model.h5")
         self.scaler_path        =    os.path.join(model_path, "ann_scaler.pkl")
         self.bid_published      =    False
+        self.last_goal          =    None
 
     # define method for setting up the model:
     def setup(self, **kwargs):
@@ -86,13 +87,16 @@ class ComputeAndPublishBid(py_trees.behaviour.Behaviour):
 
             # load the scaler:
             self.scaler = load(open(self.scaler_path, "rb"))
+            self.node.get_logger().info(f"Scaler loaded from {self.scaler_path}")
         except Exception as e:
             self.node.get_logger().error(f"Failed to load suitability model: {e}")
 
     # define method for initializing (MUST USE BRITISH SPELLING):
     def initialise(self):
-        # reset the flag on each new goal:
-        self.bid_published = False
+        # reset only if the goal has changed:
+        if self.node.goal != self.last_goal:
+            self.bid_published  =    False
+            self.last_goal      =    self.node.goal
     
     # define method for updating the bid:
     def update(self):
@@ -107,17 +111,22 @@ class ComputeAndPublishBid(py_trees.behaviour.Behaviour):
         
         # if the latest_odom or goal has not yet arrived, return running:
         if self.node.latest_odom is None or self.node.goal is None:
+            self.node.get_logger().info("Waiting for arrival of goal or odometry...")
             return py_trees.common.Status.RUNNING
         
-        # compute distance to the goal:
-        x       =   self.node.latest_odom.pose.pose.position.x
-        y       =   self.node.latest_odom.pose.pose.position.y
-        gx      =   self.node.goal.pose.position.x
-        gy      =   self.node.goal.pose.position.y
-        d_goal  =   np.sqrt((gx - x) ** 2 + (gy - y) ** 2)
+        # global goal position:
+        gx = self.node.goal.pose.position.x
+        gy = self.node.goal.pose.position.y
+
+        # global agent position:
+        x = self.node.agent_initial_x + self.node.latest_odom.pose.pose.position.x
+        y = self.node.agent_initial_y + self.node.latest_odom.pose.pose.position.y
+
+        # distance to the goal:
+        d_goal = np.sqrt((gx - x) ** 2 + (gy - y) ** 2)
 
         # form an input vector:
-        input = np.array([[self.node.load_history, d_goal, self.node.distance_history]])
+        input = np.array([[self.node.load_history, d_goal, self.node.total_distance]])
 
         # scale the input vector:
         scaled_input = self.scaler.transform(input)
@@ -130,7 +139,7 @@ class ComputeAndPublishBid(py_trees.behaviour.Behaviour):
         self.node.publish_bid(suitability)
         self.bid_published = True
 
-        # return success:
+        # return success after publishing a bid:
         return py_trees.common.Status.SUCCESS
     
 # define the condition node to check if all the bids are in:
