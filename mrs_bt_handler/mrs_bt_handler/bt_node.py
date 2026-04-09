@@ -13,6 +13,8 @@ import subprocess
 import signal
 import os
 import numpy as np
+import threading
+import time
 
 from mrs_drl_interfaces.action import NavigateToGoal
 from mrs_drl_interfaces.msg import Bid, Goal
@@ -95,8 +97,18 @@ class BTNode(Node):
         ##### build and start the behaviour tree: #####
         self.tree = create_tree(node = self, model_path = self.model_path)
         self.tree.setup(timeout = 2)
-        self.tree_timer = self.create_timer(0.1, self._tick_tree)   # tick the tree at 10Hz
-        self.get_logger().info(f"BT node started for {self.agent_name}")
+
+        # run tree in a separate thread:
+        self._tree_thread = threading.Thread(target = self._run_tree, args = (10, ), daemon = True).start()
+        # self.tree_timer = self.create_timer(0.1, self._tick_tree)   # tick the tree at 10Hz
+        # self.get_logger().info(f"BT node started for {self.agent_name}")
+
+    # method for ticking BT in thread:
+    def _run_tree(self, frequency : int):
+        while rclpy.ok():
+            # tick the tree:
+            self.tree.tick()
+            time.sleep(1 / frequency)
 
     # define goal callback method:
     def _goal_callback(self, msg : Goal):
@@ -145,11 +157,6 @@ class BTNode(Node):
         elif msg.data == "stop":
             # set the flag for simulation starting to false:
             self.simulation_started = False
-    
-    # define method for ticking the tree:
-    def _tick_tree(self):
-        # send a tick to the tree:
-        self.tree.tick()
 
     # define method for publishing a bid:
     def publish_bid(self, suitability : float):
