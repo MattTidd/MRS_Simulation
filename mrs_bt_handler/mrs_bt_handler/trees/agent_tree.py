@@ -30,7 +30,7 @@ def create_tree(node, model_path: str = "") -> py_trees.trees.BehaviourTree:
     # main execution tree:
     execution_tree = py_trees.composites.Selector(
         name = "ExecutionTree",
-        memory = False, 
+        memory = True, 
         children = [
             navigate_to_goal,
             recall_auction
@@ -40,7 +40,7 @@ def create_tree(node, model_path: str = "") -> py_trees.trees.BehaviourTree:
     # add the tree that checks for agent winning:
     check_tree = py_trees.composites.Sequence(
         name = "CheckTree",
-        memory = True,
+        memory = False,
         children = [
             check_for_win, 
             execution_tree
@@ -60,7 +60,7 @@ def create_tree(node, model_path: str = "") -> py_trees.trees.BehaviourTree:
     # define the root:
     root = py_trees.composites.Sequence(
         name = "Root",
-        memory = True,
+        memory = False,
         children = [
             is_sim_started, 
             active_goal, 
