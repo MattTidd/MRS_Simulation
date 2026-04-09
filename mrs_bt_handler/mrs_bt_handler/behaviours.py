@@ -34,6 +34,9 @@ class IsSimulationStarted(py_trees.behaviour.Behaviour):
         if self.node.simulation_started:
             return py_trees.common.Status.SUCCESS
         
+        # DEBUG:
+        self.node.get_logger().info(f"currently running {self.__class__.__name__}")
+        
         # else return failure:
         return py_trees.common.Status.FAILURE
     
@@ -52,6 +55,9 @@ class ActiveGoal(py_trees.behaviour.Behaviour):
         # if the node has a PoseStamped message for the goal (i.e. not None type), return success:
         if self.node.goal is not None:
             return py_trees.common.Status.SUCCESS
+        
+        # DEBUG:
+        self.node.get_logger().info(f"currently running {self.__class__.__name__}")
         
         # else return failure:
         return py_trees.common.Status.FAILURE
@@ -133,11 +139,14 @@ class ComputeAndPublishBid(py_trees.behaviour.Behaviour):
 
         # run inference on the input vector:
         suitability = float(self.model.predict(scaled_input, verbose = 0))
-        self.node.get_logger().info(f"{self.node.agent_name} suitability: {suitability:.4f}")
+        self.node.get_logger().info(f"{self.node.agent_name} suitability: {suitability:.4f} | TDT: {round(self.node.total_distance, 3)} | LH: {self.node.load_history} | DTT: {round(d_goal, 3)}")
 
         # publish the bid:
         self.node.publish_bid(suitability)
         self.bid_published = True
+
+        # DEBUG:
+        self.node.get_logger().info(f"currently running {self.__class__.__name__}")
 
         # return success after publishing a bid:
         return py_trees.common.Status.SUCCESS
@@ -161,6 +170,9 @@ class WaitForAllBids(py_trees.behaviour.Behaviour):
         if n_bids == self.node.num_agents:
             return py_trees.common.Status.SUCCESS
         
+        # DEBUG:
+        self.node.get_logger().info(f"currently running {self.__class__.__name__}")
+        
         # otherwise log that you are waiting and return running:
         self.node.get_logger().info(f"Waiting for bids: {n_bids}/{self.node.num_agents}")
         return py_trees.common.Status.RUNNING
@@ -180,6 +192,9 @@ class RemainIdle(py_trees.behaviour.Behaviour):
         # log status:
         self.node.get_logger().info(f"{self.node.agent_name} lost bid, idling...")
 
+        # DEBUG:
+        self.node.get_logger().info(f"currently running {self.__class__.__name__}")
+
         # return success:
         return py_trees.common.Status.SUCCESS
     
@@ -197,7 +212,7 @@ class CheckForWin(py_trees.behaviour.Behaviour):
     def update(self):
         # if the agent wins the bid:
         if self.node.is_winner():
-            self.node.get_logger().info(f"{self.node.agent_name} won the bid.")
+            # self.node.get_logger().info(f"{self.node.agent_name} won the bid.")
             return py_trees.common.Status.SUCCESS
         
         # otherwise:
@@ -245,6 +260,9 @@ class NavigateToGoal(py_trees.behaviour.Behaviour):
         if self._start_time is not None and (time.time() - self._start_time) > self.timeout:
             self.node.get_logger().warn(f"{self.node.agent_name} navigation timed out.")
             return py_trees.common.Status.FAILURE
+        
+        # DEBUG:
+        self.node.get_logger().info(f"currently running {self.__class__.__name__}")
         
         # global goal position:
         gx = self.node.goal.pose.position.x
