@@ -96,6 +96,8 @@ def generate_launch_description():
             launch_arguments = {"agent_name" : agent_names[agent],
                                 "agent_type" : a_type,
                                 "num_agents" : str(num_agents),
+                                "agent_initial_x" : str(positions[agent][0]),
+                                "agent_initial_y" : str(positions[agent][1])
                                 }.items()
         )
 
@@ -135,17 +137,15 @@ def generate_launch_description():
         arguments = ["--ros-args", "-p", ["config_file:=", bridge_path]]
     )
 
-    # system manager GUI:
-    system_gui = Node(
+    # bt manager GUI:
+    bt_gui = Node(
         package = "system_gui",
-        executable = "gui_node",
-        name = "system_gui",
-        parameters = [{"positions" : flattened_positions,
-                       "agent_names" : agent_names}]
+        executable = "bt_gui_node",
+        name = "bt_gui",
     )
 
     delayed_gui = TimerAction(period = delay + float(num_agents * delay),
-                              actions = [system_gui])
+                              actions = [bt_gui])
 
     return LaunchDescription([
         use_sim_time_arg, 
@@ -153,8 +153,7 @@ def generate_launch_description():
         world_arg,  
         gazebo, 
         ros_gz_bridge,
-        # delayed_gui,
-        goal_launcher
+        delayed_gui,
     ] + templates 
     + bts
     )
