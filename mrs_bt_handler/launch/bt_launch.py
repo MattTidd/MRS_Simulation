@@ -27,6 +27,20 @@ def generate_launch_description():
         description = "Type of the agent to be launched"
     )
 
+    agent_initial_x = LaunchConfiguration("agent_initial_x")
+    agent_initial_x_arg = DeclareLaunchArgument(
+        "agent_initial_x",
+        default_value = "0.0",
+        description = "Initial x position of the agent."
+    )
+
+    agent_initial_y = LaunchConfiguration("agent_initial_y")
+    agent_initial_y_arg = DeclareLaunchArgument(
+        "agent_initial_y",
+        default_value = "0.0",
+        description = "Initial y position of the agent."
+    )
+
     num_agents = LaunchConfiguration("num_agents")
     num_agents_arg = DeclareLaunchArgument(
         "num_agents",
@@ -48,11 +62,13 @@ def generate_launch_description():
         name = "bt_node",
         namespace = agent_name,
         parameters = [{
-            "agent_name" : agent_name,
-            "agent_type" : agent_type, 
-            "model_name" : drl_model,
-            "num_agents" : num_agents,
-            "model_path" : model_path
+            "agent_name"        :    agent_name,
+            "agent_type"        :    agent_type, 
+            "agent_initial_x"   :    agent_initial_x,
+            "agent_initial_y"   :    agent_initial_y,
+            "model_name"        :    drl_model,
+            "num_agents"        :    num_agents,
+            "model_path"        :    model_path
         }],
     )
 
@@ -60,6 +76,8 @@ def generate_launch_description():
         # args:
         agent_name_arg,
         agent_type_arg, 
+        agent_initial_x_arg,
+        agent_initial_y_arg,
         num_agents_arg, 
         drl_model_arg,
 
