@@ -49,7 +49,7 @@ class BTNode(Node):
         self.goal:                  PoseStamped     |   None    =     None      # current pose of goal
         self.latest_odom:           Odometry        |   None    =     None      # latest odometry
         self.total_distance:        float                       =     0.0       # total distance travelled
-        self.distance_history:      float                       =     0.0       # load history (number of tasks completed thus far)
+        self.load_history:          float                       =     0.0       # load history (number of tasks completed thus far)
         self.all_bids:              dict                        =     {}        # dictionary of form {agent_name : suitability_score}
         self.simulation_started:    bool                        =     False     # flag for whether the simulation has started or not
         self.policy_process                                     =     None      # handle for the policy subprocess
@@ -125,7 +125,7 @@ class BTNode(Node):
             y = msg.pose.pose.position.y
 
             # compute total distance:
-            self.distance_history += np.sqrt((x - x_prev)**2 + (y - y_prev)**2)
+            self.total_distance += np.sqrt((x - x_prev)**2 + (y - y_prev)**2)
         
         # advance latest odom via msg:
         self.latest_odom = msg
