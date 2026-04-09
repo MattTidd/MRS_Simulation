@@ -16,6 +16,9 @@ class GoalClient(Node):
         # set flag for completion:
         self._done = False
 
+        # counter for logging:
+        self._log_counter = 0
+
         # instantiate client:
         self._client = ActionClient(
             self, 
@@ -63,11 +66,15 @@ class GoalClient(Node):
         # instantiate feedback:
         f = feedback.feedback
 
-        # print feedback to user:
-        self.get_logger().info(
-            f'Time: {f.elapsed_time: 5.2f} | ' 
-            f'Distance to goal: {f.distance_to_goal: 5.3f} m'
-        )
+        # update logging counter:
+        self._log_counter += 1
+
+        if self._log_counter % 50 == 0:
+            # print feedback to user:
+            self.get_logger().info(
+                f'Time: {f.elapsed_time: 5.2f} | ' 
+                f'Distance to goal: {f.distance_to_goal: 5.3f} m'
+            )
 
     # define callback for results:
     def result_callback(self, future):
