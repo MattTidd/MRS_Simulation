@@ -28,16 +28,22 @@ class BTNode(Node):
         ##### declare parameters: #####
         self.declare_parameter("agent_name", "agent1")
         self.declare_parameter("agent_type", "typeA")
+        self.declare_parameter("agent_initial_x", 0.0)
+        self.declare_parameter("agent_initial_y", 0.0)
         self.declare_parameter("model_name", "SAC_001")
         self.declare_parameter("num_agents", 2)
         self.declare_parameter("model_path", "")
+        self.declare_parameter("goal_tolerance", 0.125)
 
         ##### add parameters to the class: #####
-        self.agent_name     =    self.get_parameter("agent_name").value
-        self.agent_type     =    self.get_parameter("agent_type").value
-        self.model_name     =    self.get_parameter("model_name").value
-        self.num_agents     =    self.get_parameter("num_agents").value
-        self.model_path     =    self.get_parameter("model_path").value
+        self.agent_name         =   self.get_parameter("agent_name").value
+        self.agent_type         =   self.get_parameter("agent_type").value
+        self.agent_initial_x    =   self.get_parameter("agent_initial_x").value
+        self.agent_initial_y    =   self.get_parameter("agent_initial_y").value
+        self.model_name         =   self.get_parameter("model_name").value
+        self.num_agents         =   self.get_parameter("num_agents").value
+        self.model_path         =   self.get_parameter("model_path").value
+        self.goal_tolerance     =   self.get_parameter("goal_tolerance").value
 
         ##### storage for the important states that are used by the node/tree: #####
         self.goal:                  PoseStamped     |   None    =     None      # current pose of goal
@@ -47,6 +53,7 @@ class BTNode(Node):
         self.all_bids:              dict                        =     {}        # dictionary of form {agent_name : suitability_score}
         self.simulation_started:    bool                        =     False     # flag for whether the simulation has started or not
         self.policy_process                                     =     None      # handle for the policy subprocess
+        self.goal_process                                       =     None      # handle for the goal subprocess
 
         ##### create subscribers: #####
         # subscriber for the goal:
@@ -196,6 +203,15 @@ class BTNode(Node):
                 "-p", f"model_name:={self.model_name}",
                 "-p", f"agent_name:={self.agent_name}"], start_new_session = True)
             
+        # if there is no active goal process:
+        if self.goal_process is None or self.goal_process.poll() is not None:
+            # need to extract the position of the goal within the frame of the agent:
+            dx = self.goal.pose.position.x - self.agent_initial_x
+            dy = self.goal.pose.position.y - self.agent_initial_y
+
+            # spin up the goal client, similar to the GUI:
+            self.goal_process = subprocess.Popen(["ros2", "run", "mrs_drl_policy", "goal_client", str(dx), str(dy), f"{self.goal_tolerance}"], start_new_session = True)
+
     # define method for killing the policy node:
     def kill_policy(self):
         # if there is a policy process active:
