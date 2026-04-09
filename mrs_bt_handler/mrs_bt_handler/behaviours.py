@@ -185,7 +185,7 @@ class RemainIdle(py_trees.behaviour.Behaviour):
     
 # define condition node to check to see if agent wins:
 class CheckForWin(py_trees.behaviour.Behaviour):
-    # constructor for node:
+    # constructor for the behaviour:
     def __init__(self, node):
         # inherit from parent:
         super().__init__("CheckForWin")
@@ -206,107 +206,79 @@ class CheckForWin(py_trees.behaviour.Behaviour):
 
 # define an action for navigating to the goal:
 class NavigateToGoal(py_trees.behaviour.Behaviour):
-    # define a constructor for the node:
-    def __init__(self, node):
-        # inherit from parent:
+    # constructor for the behaviour:
+    def __init__(self, node, timeout : float = 60.0):
+        # inherit from parent class:
         super().__init__("NavigateToGoal")
 
-        # add to the class:
-        self.node           = node
-        self._goal_handle   = None
-        self._result        = None
-        self._goal_sent     = False
-        self._done          = False
-        self._succeeded     = False
+        # add node to class:
+        self.node = node
 
-    # define a method for initializing (MUST USE BRITISH SPELLING):
+        # add timer for timeout tracking:
+        self.timeout        =    timeout
+        self._start_time    =    None
+
+    # define initialise method for class:
     def initialise(self):
-        # reset each of the states on each new activation:
-        self._goal_handle   = None
-        self._result        = None
-        self._goal_sent     = False
-        self._done          = False
-        self._succeeded     = False
+        # if there is a new goal:
+        if self.node.new_goal:
+            # reset flag:
+            self.node.new_goal = False
 
-        # spin the policy node:
-        self.node.spin_up_policy()
+            # start a timer:
+            self._start_time = time.time()
 
-        # wait for policy node to launch:
-        time.sleep(2)
+            # spin policy node:
+            self.node.spin_up_policy()
 
-        # wait for the action server:
-        self.node.get_logger().info("Waiting for action server...")
-        self.node.nav_client.wait_for_server()
+            # print to user:
+            self.node.get_logger().info(f"{self.node.agent_name} navigating to goal")
 
-        # form the goal message:
-        goal_msg                            = NavigateToGoal.Goal()
-        goal_msg.target_pose                = self.node.goal
-        goal_msg.goal_tolerance             = 0.125
-
-        # send the goal message:
-        send_goal_future = self.node.nav_client.send_goal_async(
-            goal_msg,
-            feedback_callback = self._feedback_callback)
-        send_goal_future.add_done_callback(self._goal_response_callback)
-
-        # set flag to true, log that agent is navigating:
-        self._goal_sent = True
-        self.node.get_logger().info(f"{self.node.agent_name} navigating to goal")
-
-    # define update method:
+    # define update method for class:
     def update(self):
-        # if not done yet:
-        if not self._done:
+        # if there is either no goal or no odometry coming in:
+        if self.node.latest_odom is None or self.node.goal is None:
+            self.node.get_logger().info("no odom or latest goal")
             return py_trees.common.Status.RUNNING
         
-        # if successful:
-        if self._succeeded:
-            # increment load history of the agent:
-            self.node.load_history += 1.0
-
-            # set goal to None:
-            self.node.goal = None
-
-            # report success:
-            return py_trees.common.Status.SUCCESS
-        # otherwise:
-        else:
+        # check for a timeout:
+        if self._start_time is not None and (time.time() - self._start_time) > self.timeout:
+            self.node.get_logger().warn(f"{self.node.agent_name} navigation timed out.")
             return py_trees.common.Status.FAILURE
         
+        # global goal position:
+        gx = self.node.goal.pose.position.x
+        gy = self.node.goal.pose.position.y
+
+        # global agent position:
+        x = self.node.agent_initial_x + self.node.latest_odom.pose.pose.position.x
+        y = self.node.agent_initial_y + self.node.latest_odom.pose.pose.position.y
+
+        # distance to the goal:
+        d_goal = np.sqrt((gx - x) ** 2 + (gy - y) ** 2)
+
+        # check d_goal for completion:
+        if d_goal <= self.node.goal_tolerance:
+            # increment load history:
+            self.node.load_history += 1.0
+
+            # clear the active goal:
+            self.node.goal = None
+
+            # return success:
+            return py_trees.common.Status.SUCCESS
+        
+        # otherwise keep running:
+        return py_trees.common.Status.RUNNING
+    
     # define termination method:
     def terminate(self, new_status):
-        # kill the policy node when done, regardless of what happens:
+        # kill the policy:
         self.node.kill_policy()
 
-        # if failed, trigger a rebroadcast of the goal:
+        # rebroadcast the goal on failure:
         if new_status == py_trees.common.Status.FAILURE:
             self.node.rebroadcast_goal()
-
-    # define a callback for the goal response:
-    def _goal_response_callback(self, future):
-        self._goal_handle = future.result()
-
-        # if goal is rejected:
-        if not self._goal_handle.accepted:
-            self.node.get_logger().warn("Goal rejected")
-            self._done          =    True
-            self._succeeded     =    False
-            return
-        
-        # get result, add callback:
-        result_future = self._goal_handle.get_result_async()
-        result_future.add_done_callback(self._result_callback)
-
-    # define result callback:
-    def _result_callback(self, future):
-        self._result     = future.result().result
-        self._succeeded  = self._result.success
-        self._done       = True
-        self.node.get_logger().info(f"Navigation result: {self._result.message}")
-
-    # define feedback callback:
-    def _feedback_callback(self, feedback):
-        pass
 
 # define class for recalling the auction:
 class RecallAuction(py_trees.behaviour.Behaviour):
