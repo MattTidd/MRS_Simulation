@@ -2,6 +2,7 @@
 import rclpy
 from rclpy.node import Node
 from rclpy.action import ActionClient
+from rclpy.executors import MultiThreadedExecutor
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import PoseStamped
 from std_msgs.msg import Float32, String
@@ -216,9 +217,13 @@ def main():
     # instantiate the node:
     node = BTNode()
 
+    # call a multi-threaded executor:
+    executor = MultiThreadedExecutor()
+    executor.add_node(node)
+
     # start spinning it:
     try:
-        rclpy.spin(node)
+        executor.spin()
     except KeyboardInterrupt:
         pass
     finally:
