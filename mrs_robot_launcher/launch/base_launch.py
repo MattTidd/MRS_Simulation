@@ -1,10 +1,13 @@
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, OpaqueFunction
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.parameter_descriptions import ParameterValue
 from launch_ros.actions import Node
 from launch.substitutions import LaunchConfiguration, Command, PathJoinSubstitution, TextSubstitution
 from ament_index_python.packages import get_package_share_directory
+import os
+import yaml
+
 
 """
 this file is the base launch template for an agent in the MRS. from here, the following namespaced nodes are launched:
@@ -19,11 +22,78 @@ this file is the base launch template for an agent in the MRS. from here, the fo
 and the idea is that this launch file template be included and populated in a loop over the number of agents desired
 """
 
+# method for generating the controller parameters .yaml file:
+def generate_controller_config(agent_name : str, output_dir : str):
+    # define the parameters:
+    controller_parameters = {
+        f"{agent_name}/controller_manager" : {
+            "ros__parameters" : {
+                "update_rate" : 30,
+                "diff_controller" : {
+                    "type" : "diff_drive_controller/DiffDriveController"
+                },
+                "joint_broad" : {
+                    "type" : "joint_state_broadcaster/JointStateBroadcaster"
+                }
+            }
+        },
+        f"{agent_name}/diff_controller" : {
+            "ros__parameters" : {
+                # joint names:
+                "left_wheel_names" : [f"{agent_name}_front_left_joint", f"{agent_name}_back_left_joint"],
+                "right_wheel_names" : [f"{agent_name}_front_right_joint", f"{agent_name}_back_right_joint"],
+
+                # wheel parameters:
+                "wheel_separation" : 0.1695,
+                "wheel_radius" : 0.0325,
+                "max_wheel_vel" : 10.0,
+                "linear.x.min_velocity" : 0.0,
+                "linear.x.max_velocity" : 1.0,
+                "linear.x.max_acceleration" : 1.0,
+                "angular.z.min_velocity" : -1.0,
+                "angular.z.max_velocity" : 1.0,
+                "angular.z.max_acceleration" : 2.0,
+
+                # ros parameters:
+                "base_frame_id" : f"{agent_name}_base_link",
+                "odom_frame_id" : "wheel_odom",
+                "enable_odom_tf" : False,
+                "open_loop" : False,
+                "publish_rate" : 30.0,
+
+                # covariances:
+                "pose_covariance_diagonal" : [1.0, 1.0, 1.0, 1.0, 1.0, 0.1],
+                "twist_covariance_diagonal" : [0.1, 0.1, 1.0, 1.0, 1.0, 0.1]
+            }
+        }
+    }
+
+    # write these parameters to a file:
+    path = os.path.join(output_dir, f"{agent_name}_controllers.yaml")
+    print(f"controller path is: {path}")
+    with open(path, "w") as f:
+        yaml.dump(controller_parameters, f)
+
+# define an opaque function so I can actually use the agent_name:
+def setup(context, *args, **kwargs):
+    # get the agent_name:
+    agent_name = LaunchConfiguration("agent_name").perform(context)
+
+    # get the paths:
+    pkg_path = get_package_share_directory("mrs_robot_launcher")
+    controllers_path = os.path.join(pkg_path, "config", "controllers")
+
+    # generate the file:
+    generate_controller_config(agent_name = agent_name, output_dir = controllers_path)
+
+    return []
+
 def generate_launch_description():
     # define the paths to be used:
     pkg_path = get_package_share_directory("mrs_robot_launcher")
     xacro_path = PathJoinSubstitution([pkg_path, "urdf", "agent", "agent.urdf.xacro"])
     odom_launch_path = PathJoinSubstitution([pkg_path, "launch", "odom_launch.py"])
+    controllers_path = os.path.join(pkg_path, "config", "controllers")
 
     # define the launch arguments:
     use_sim_time = LaunchConfiguration("use_sim_time")
@@ -131,6 +201,9 @@ def generate_launch_description():
         agent_initial_x_pos_arg,
         agent_initial_y_pos_arg,
         agent_initial_yaw_arg,
+
+        # opaque function:
+        OpaqueFunction(function = setup),
 
         # nodes:
         rsp,
