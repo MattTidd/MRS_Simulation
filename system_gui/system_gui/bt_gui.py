@@ -27,6 +27,16 @@ class GuiNode(Node):
         # display to user when node has started:
         self.get_logger().info("GUI node started")
 
+        # declare parameters:
+        self.declare_parameter("positions", [0.0])
+        self.declare_parameter("agent_names", [""])
+
+        # add parameter to the class:
+        flat                    =    self.get_parameter("positions").value
+        names                   =    self.get_parameter("agent_names").value
+        positions               =    [[flat[i], flat[i+1]] for i in range(0, len(flat), 2)]
+        self.agent_positions    =    dict(zip(names, positions))
+
         # establish publishers:
         self.goal_pub   = self.create_publisher(Goal, "/goal", 10)
         self.start_pub  = self.create_publisher(String, "/simulation_start", 10)
@@ -43,6 +53,9 @@ class MainWindow(QWidget):
 
         # add the node to the GUI:
         self.node = node
+
+        # get the position dict:
+        self.agent_positions = self.node.agent_positions
 
         # set the title of window:
         self.setWindowTitle("ROS2 MRS GUI")
@@ -124,15 +137,21 @@ class MainWindow(QWidget):
         self.y_input.setAlignment(Qt.AlignCenter)
         grid0.addWidget(self.y_input, 0, 2, alignment = Qt.AlignCenter)
 
-        # add a button for starting the simulation:
+        # add a button for publishing the goal:
         self.publish_goal_button = QPushButton("Publish Goal")
         self.publish_goal_button.clicked.connect(self._on_publish_goal_clicked)
         grid0.addWidget(self.publish_goal_button, 0, 3, alignment = Qt.AlignCenter)
 
         ##### grid 1 - simulation related settings: #####
+        # add a button for resetting the simulation:
+        self.reset_sim_button = QPushButton("Reset Simulation")
+        self.reset_sim_button.clicked.connect(self._on_reset_sim_clicked)
+        grid1.addWidget(self.reset_sim_button, 0, 0, alignment = Qt.AlignCenter)
+
+        # add a button for starting the simulation:
         self.start_sim_button = QPushButton("Start Simulation")
         self.start_sim_button.clicked.connect(self._on_start_sim_clicked)
-        grid1.addWidget(self.start_sim_button, 0, 0, alignment = Qt.AlignCenter)
+        grid1.addWidget(self.start_sim_button, 0, 1, alignment = Qt.AlignCenter)
 
         # add child layouts to main layout:
         main_layout.addWidget(group0)
@@ -162,19 +181,40 @@ class MainWindow(QWidget):
 
     # method for killing nodes:
     def _kill_namespaced_node(self, namespace : str, node = None):
-        # pull the PID of the node that you are looking for:
-        result = subprocess.run(
-                ["pgrep", "-f", f"{node}.*__ns:=/{namespace}"],
-                capture_output = True,
-                text = True
-            )
-        
-        # back out the PID:
-        pid = result.stdout.strip()
+        # list the process names of the odometry executables:
+        nodes = ["ekf_node", "covariance_filter_node", "rf2o_laser_odom"]
 
-        # if this process exists, kill it:
-        if pid:
-            subprocess.run(["kill", pid])
+        # if the user passes a single node:
+        if node:
+            # pull the PID of the node that they are looking for:
+            result = subprocess.run(
+                    ["pgrep", "-f", f"{node}.*__ns:=/{namespace}"],
+                    capture_output = True,
+                    text = True
+                )
+            
+            # back out the PID:
+            pid = result.stdout.strip()
+
+            # if this process exists, kill it:
+            if pid:
+                subprocess.run(["kill", pid])
+        else:
+            # for every executable:
+            for executable in nodes:
+                # find the executable that corresponds to that agent:
+                result = subprocess.run(
+                    ["pgrep", "-f", f"{executable}.*__ns:=/{namespace}"],
+                    capture_output = True,
+                    text = True
+                )
+
+                # back out the PID:
+                pid = result.stdout.strip()
+
+                # if the process exists, kill it
+                if pid:
+                    subprocess.run(["kill", pid])
 
     # method for pressing the goal button:
     def _on_publish_goal_clicked(self):
@@ -239,6 +279,38 @@ class MainWindow(QWidget):
         print(f"Goal published at: ({x}, {y})!")
 
         # re-enable buttons:
+        time.sleep(2)
+        self.button_handling.emit()
+
+    # method for pressing the reset sim button:
+    def _on_reset_sim_clicked(self):
+        # lock buttons:
+        self._lock_buttons()
+
+        # use another thread to call the button execution:
+        for agent_name in self.agent_positions:
+            threading.Thread(target = self._reset_sim_process, args = (agent_name, ), daemon = True).start()
+
+    # method for reset sim process:
+    def _reset_sim_process(self, agent_name : str):
+        # need to extract the positions of each agent:
+        pos = self.agent_positions[agent_name]
+        x, y = pos[0], pos[1]
+
+        # move the position of the agent name passed to the process:
+        subprocess.run(["ign", "service", "-s", "/world/world_1/set_pose",
+                        "--reqtype", "ignition.msgs.Pose",
+                        "--reptype", "ignition.msgs.Boolean",
+                        "--timeout", "2000",
+                        "--req", f"name: '{agent_name}', position: {{x: {x}, y: {y}, z: {0.0}}}"])
+        
+        # kill the nodes related to the odometry of that agent:
+        self._kill_namespaced_node(namespace = agent_name)
+
+        # call the launch file for the odometry nodes:
+        self.odom_process = subprocess.Popen(["ros2", "launch", "mrs_robot_launcher", "odom_launch.py", f"agent_name:={agent_name}"])
+
+        # re-enable the buttons:
         time.sleep(2)
         self.button_handling.emit()
 
