@@ -142,6 +142,10 @@ def generate_launch_description():
         package = "system_gui",
         executable = "bt_gui_node",
         name = "bt_gui",
+        parameters = [{
+            "agent_names" : agent_names,
+            "positions" : flattened_positions
+        }]
     )
 
     delayed_gui = TimerAction(period = delay + float(num_agents * delay),
