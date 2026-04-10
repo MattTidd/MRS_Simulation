@@ -5,6 +5,9 @@ from launch_ros.actions import Node
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from ament_index_python.packages import get_package_share_directory
 import numpy as np
+import yaml
+import tempfile
+import os
 
 """
 this file is the launch file for launching the MRS, wherein the user specifies lists of parameters for each agent in the system, 
@@ -17,6 +20,65 @@ launches:
 
 """
 
+# method for generating the bridge parameters .yaml file:
+def generate_bridge_config(agent_names : list) -> str:
+    # initialize an empty list to hold parameters:
+    bridge_params = []
+
+    # add the clock bridge, which is always present:
+    bridge_params.append({
+        "direction" : "GZ_TO_ROS",
+        "gz_topic_name" : "clock",
+        "gz_type_name" : "gz.msgs.Clock",
+        "ros_topic_name" : "clock",
+        "ros_type_name" : "rosgraph_msgs/msg/Clock"
+    })
+
+    # need to add the bridged sensor topics:
+    for agent in agent_names:
+        bridge_params += [
+            # add the cmd_vel port:
+            {
+                "direction" : "ROS_TO_GZ",
+                "gz_topic_name" : f"{agent}_cmd_vel",
+                "gz_type_name" : "gz.msgs.Twist",
+                "ros_topic_name" : f"{agent}/cmd_vel",
+                "ros_type_name" : "geometry_msgs/msg/TwistStamped"
+            }, 
+            # add the scan port:
+            {
+                "direction" : "GZ_TO_ROS",
+                "gz_topic_name" : f"{agent}_scan",
+                "gz_type_name" : "gz.msgs.LaserScan",
+                "ros_topic_name" : f"{agent}/scan",
+                "ros_type_name" : "sensor_msgs/msg/LaserScan"
+            },
+            # add the scan points port:
+            {
+                "direction" : "GZ_TO_ROS",
+                "gz_topic_name" : f"{agent}_scan/points",
+                "gz_type_name" : "gz.msgs.PointCloudPacked",
+                "ros_topic_name" : f"{agent}/scan/points",
+                "ros_type_name" : "sensor_msgs/msg/PointCloud2"
+            },
+            # add the IMU port:
+            {
+                "direction" : "GZ_TO_ROS",
+                "gz_topic_name" : f"{agent}_imu_data",
+                "gz_type_name" : "gz.msgs.IMU",
+                "ros_topic_name" : f"{agent}/imu_data",
+                "ros_type_name" : "sensor_msgs/msg/Imu"
+            }
+        ]
+
+    # write these parameters to a file and return its path:
+    tmp = tempfile.NamedTemporaryFile(mode = "w", suffix = ".yaml", delete = False)
+    yaml.dump(bridge_params, tmp)
+    tmp.close()
+
+    # return file path to user:
+    return tmp.name
+
 def generate_launch_description():
     # define the paths:
     pkg_path                =    get_package_share_directory("mrs_robot_launcher")
@@ -25,7 +87,6 @@ def generate_launch_description():
     bt_launch_path          =    PathJoinSubstitution([bt_pkg_path, "launch", "bt_launch.py"])
     gazebo_launch_path      =    PathJoinSubstitution([pkg_path, "launch", "gazebo_launch.py"])
     goal_launch_path        =    PathJoinSubstitution([pkg_path, "launch", "goal_launch.py"])
-    bridge_path             =    PathJoinSubstitution([pkg_path, "config", "bridges", "system_bridge_parameters.yaml"])
 
     # define the arguments for launching:
     use_sim_time = LaunchConfiguration("use_sim_time")
@@ -50,12 +111,12 @@ def generate_launch_description():
     )
     
     # define parameters for launching agents:
-    positions = [["-3.0", "-3.0"], ["-3.0", "3.0"]]  # in form [(x1, y1), (x2, y2)]
-    agent_names         = ["agent1", "agent2"]
-    agent_types         = ["typeA", "typeB"]
+    positions = [["-3.0", "-3.0"], ["-3.0", "3.0"], ["0.0", "0.0"]]  # in form [(x1, y1), (x2, y2)]
+    agent_names         = ["agent1", "agent2", "agent3"]
+    agent_types         = ["typeA", "typeB", "typeA"]
     agent_initial_xs    = [str(p[0]) for p in positions]
     agent_initial_ys    = [str(p[1]) for p in positions]
-    agent_initial_yaws  = ["0.0", "0.0"]
+    agent_initial_yaws  = ["0.0", "0.0", "0.0"]
     flattened_positions = [float(coord) for p in positions for coord in p]
 
     # should have a seperate goal manager node probably that provides pertinent information about the goal, 
@@ -130,6 +191,8 @@ def generate_launch_description():
     )
 
     # use a single ros bridge node:
+    bridge_path = generate_bridge_config(agent_names = agent_names)
+
     ros_gz_bridge = Node(
         package = "ros_gz_bridge",
         executable = "parameter_bridge",
@@ -159,5 +222,5 @@ def generate_launch_description():
         ros_gz_bridge,
         delayed_gui,
     ] + templates 
-    + bts
+    # + bts
     )
