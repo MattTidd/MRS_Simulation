@@ -111,12 +111,12 @@ def generate_launch_description():
     )
     
     # define parameters for launching agents:
-    positions = [["-3.0", "-3.0"], ["-3.0", "3.0"], ["0.0", "0.0"]]  # in form [(x1, y1), (x2, y2)]
-    agent_names         = ["agent1", "agent2", "agent3"]
-    agent_types         = ["typeA", "typeB", "typeA"]
+    positions           = [["-2.0", "1.0"], ["-2.0", "-1.0"]]
+    agent_names         = ["agent1", "agent2"]
+    agent_types         = ["typeA", "typeB"]
     agent_initial_xs    = [str(p[0]) for p in positions]
     agent_initial_ys    = [str(p[1]) for p in positions]
-    agent_initial_yaws  = ["0.0", "0.0", "0.0"]
+    agent_initial_yaws  = ["0.0", "0.0"]
     flattened_positions = [float(coord) for p in positions for coord in p]
 
     # should have a seperate goal manager node probably that provides pertinent information about the goal, 
@@ -222,5 +222,5 @@ def generate_launch_description():
         ros_gz_bridge,
         delayed_gui,
     ] + templates 
-    # + bts
+    + bts
     )
