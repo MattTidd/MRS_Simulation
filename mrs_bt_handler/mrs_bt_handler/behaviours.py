@@ -297,9 +297,6 @@ class NavigateToGoal(py_trees.behaviour.Behaviour):
         # clear the goal for the other agents on success:
         if new_status == py_trees.common.Status.SUCCESS:
             self.node.broadcast_goal_clear()
-        # rebroadcast the goal on failure:
-        elif new_status == py_trees.common.Status.FAILURE:
-            self.node.rebroadcast_goal()
 
 # define class for recalling the auction:
 class RecallAuction(py_trees.behaviour.Behaviour):

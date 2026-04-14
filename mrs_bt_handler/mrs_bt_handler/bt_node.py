@@ -209,17 +209,6 @@ class BTNode(Node):
         self.goal_pub.publish(msg)
         self.get_logger().info(f"{self.agent_name} broadcasting goal completion")
 
-    # define method for rebroadcasting the goal:
-    def rebroadcast_goal(self):
-        # if navigation fails, call this method:
-        self.get_logger().warn(f"{self.agent_name} failed, rebroadcasting goal...")
-
-        # clear the list of bids, as there will be a new goal:
-        self.all_bids = {}
-
-        # clear goal:
-        self.goal = None
-
     # define method for spinning the navigation policy and goal nodes up:
     def spin_up_policy(self):
         # if there is no active policy process:
