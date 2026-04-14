@@ -24,6 +24,9 @@ class GuiNode(Node):
         # inherit from parent class:
         super().__init__("bt_gui_node")
 
+        # add gui to the node:
+        self.gui = None
+
         # display to user when node has started:
         self.get_logger().info("GUI node started")
 
@@ -37,9 +40,18 @@ class GuiNode(Node):
         positions               =    [[flat[i], flat[i+1]] for i in range(0, len(flat), 2)]
         self.agent_positions    =    dict(zip(names, positions))
 
+        # establish subscribers:
+        self.goal_sub  = self.create_subscription(Goal, "/goal", self._goal_callback, 10)
+
         # establish publishers:
         self.goal_pub   = self.create_publisher(Goal, "/goal", 10)
         self.start_pub  = self.create_publisher(String, "/simulation_start", 10)
+
+    # define a callback for the goal subscriber:
+    def _goal_callback(self, msg : Goal):
+        # if receiving an empty goal message:
+        if msg.required_capability == "":
+            self.gui._publish_next_goal()
 
 # class for the actual GUI:
 class MainWindow(QWidget):
@@ -56,6 +68,12 @@ class MainWindow(QWidget):
 
         # get the position dict:
         self.agent_positions = self.node.agent_positions
+
+        # flag for despawning:
+        self.goal_number = 0
+
+        # set an empty dict for goal queuing:
+        self.goal_queue = {}
 
         # set the title of window:
         self.setWindowTitle("ROS2 MRS GUI")
@@ -137,10 +155,10 @@ class MainWindow(QWidget):
         self.y_input.setAlignment(Qt.AlignCenter)
         grid0.addWidget(self.y_input, 0, 2, alignment = Qt.AlignCenter)
 
-        # add a button for publishing the goal:
-        self.publish_goal_button = QPushButton("Publish Goal")
-        self.publish_goal_button.clicked.connect(self._on_publish_goal_clicked)
-        grid0.addWidget(self.publish_goal_button, 0, 3, alignment = Qt.AlignCenter)
+        # add a button for queueing goals:
+        self.queue_goal_button = QPushButton("Queue Goal")
+        self.queue_goal_button.clicked.connect(self._on_queue_goal_clicked)
+        grid0.addWidget(self.queue_goal_button, 0, 3, alignment = Qt.AlignCenter)
 
         ##### grid 1 - simulation related settings: #####
         # add a button for resetting the simulation:
@@ -166,18 +184,18 @@ class MainWindow(QWidget):
     # method for locking the buttons:
     def _lock_buttons(self):
         # lock all buttons:
-        self.publish_goal_button.setEnabled(False)
+        self.queue_goal_button.setEnabled(False)
 
         # modify text of buttons:
-        self.publish_goal_button.setText("Waiting...")
+        self.queue_goal_button.setText("Waiting...")
 
     # method for enabling the buttons:
     def _enable_buttons(self):
         # unlock buttons:
-        self.publish_goal_button.setEnabled(True)
+        self.queue_goal_button.setEnabled(True)
 
         # modify the text of the buttons:
-        self.publish_goal_button.setText("Publish Goal")
+        self.queue_goal_button.setText("Publish Goal")
 
     # method for killing nodes:
     def _kill_namespaced_node(self, namespace : str, node = None):
@@ -216,70 +234,42 @@ class MainWindow(QWidget):
                 if pid:
                     subprocess.run(["kill", pid])
 
-    # method for pressing the goal button:
-    def _on_publish_goal_clicked(self):
+    # method for queuing goals:
+    def _on_queue_goal_clicked(self):
         # lock buttons:
         self._lock_buttons()
 
         # use another thread to call the button execution:
-        threading.Thread(target = self._goal_publish_process, args = (), daemon = True).start()
+        threading.Thread(target = self._goal_queue_process, args = (), daemon = True).start()
 
-    # method for goal publish process:
-    def _goal_publish_process(self):
-        # print to user:
-        print("\npublishing goal...")
+    # method for goal queue process:
+    def _goal_queue_process(self):
+        # print to the user:
+        self.node.get_logger().info(f"Adding goal to queue...")
 
-        # pull values needed to populate message:
+        # extract the values related to the goal: 
         x = self.x_input.text()
         y = self.y_input.text()
         goal_type = self.goal_type_combo_box.currentText()
-        
-        # need to ensure that these values are their correct typings:
-        try:
+
+        # ensure that these values are their correct typings:
+        try: 
             x = float(x)
             y = float(y)
-        # catch the exception:
+        # catch the exception on value typing:
         except Exception as e:
-            print(f"Please provide a valid goal pose: \n{e}")
+            self.node.get_logger().info(f"Provided goal pose is invalid: {e}")
 
             # perform the re-enable before returning:
-            time.sleep(2)
+            time.sleep(1)
             self.button_handling.emit()
             return
-        
-        # need to then kill the current goal publishing nodes:
-        self._kill_namespaced_node(namespace = "goal", node = "robot_state_pub")
 
-        # despawn the goal body in the simulation:
-        subprocess.run(["ign", "service", "-s", "/world/world_1/remove",
-                    "--reqtype", "ignition.msgs.Entity",
-                    "--reptype", "ignition.msgs.Boolean",
-                    "--timeout", "2000",
-                    "--req", f"name: 'goal' type: MODEL"])
-        
-        # relaunch the goal:
-        subprocess.Popen(["ros2", "launch", "mrs_robot_launcher", "goal_launch.py", 
-                          "use_sim_time:=true",
-                          "goal_name:=goal", 
-                          f"goal_type:={goal_type}",
-                          f"goal_initial_x_pos:={x}",
-                          f"goal_initial_y_pos:={y}"])
-            
-        # need to populate the goal message:
-        msg                             =   Goal()
-        msg.pose.header.stamp           =   self.node.get_clock().now().to_msg()
-        msg.pose.pose.position.x        =   x
-        msg.pose.pose.position.y        =   y
-        msg.pose.pose.position.z        =   0.0
-        msg.pose.pose.orientation.w     =   1.0
-        msg.required_capability         =   goal_type
-
-        # publish:
-        self.node.goal_pub.publish(msg)
-        print(f"Goal published at: ({x}, {y})!")
+        # add current goal into the goal queue dictionary:
+        self.goal_queue[f"goal_{len(self.goal_queue) + 1}"] = [goal_type, x, y]
 
         # re-enable buttons:
-        time.sleep(2)
+        time.sleep(1)
         self.button_handling.emit()
 
     # method for pressing the reset sim button:
@@ -310,6 +300,19 @@ class MainWindow(QWidget):
         # call the launch file for the odometry nodes:
         self.odom_process = subprocess.Popen(["ros2", "launch", "mrs_robot_launcher", "odom_launch.py", f"agent_name:={agent_name}"])
 
+        # despawn the goal:
+        self._kill_namespaced_node(namespace = "goal", node = "robot_state_pub")
+
+        subprocess.run(["ign", "service", "-s", "/world/world_1/remove",
+                    "--reqtype", "ignition.msgs.Entity",
+                    "--reptype", "ignition.msgs.Boolean",
+                    "--timeout", "2000",
+                    "--req", f"name: 'goal' type: MODEL"])
+
+        # clear the goal queue:
+        self.goal_queue.clear()
+        self.node.get_logger().info(f"the goal queue is now: {self.goal_queue}")
+
         # re-enable the buttons:
         time.sleep(2)
         self.button_handling.emit()
@@ -324,9 +327,7 @@ class MainWindow(QWidget):
 
     # method for start sim process:
     def _start_sim_process(self):
-        # print to user:
-        print("starting simulation...")
-
+        # 1 - SEND THE SIGNAL THAT THE SIMULATION HAS STARTED:
         # populate the start sim message:
         msg = String()
         msg.data = "start"
@@ -334,9 +335,66 @@ class MainWindow(QWidget):
         # publish the message:
         self.node.start_pub.publish(msg)
 
+        # 2 - IF THERE IS ANY GOAL IN THE QUEUE:
+        if self.goal_queue:
+            self.node.get_logger().info("Goal detected in queue, publishing!")
+            self._publish_next_goal()
+        else:
+            self.node.get_logger().info("No goals provided for the current mission!")
+
         # re-enable buttons:
         time.sleep(2)
         self.button_handling.emit()
+
+    # method for publishing goals:
+    def _publish_next_goal(self):
+        # if it is not the first goal:
+        if self.goal_number != 0:
+            # display to user:
+            self.node.get_logger().info("Goal complete!")
+
+            # delete the previous goal:
+            self._kill_namespaced_node(namespace = "goal", node = "robot_state_pub")
+
+            # despawn the goal body in the simulation:
+            subprocess.run(["ign", "service", "-s", "/world/world_1/remove",
+                        "--reqtype", "ignition.msgs.Entity",
+                        "--reptype", "ignition.msgs.Boolean",
+                        "--timeout", "2000",
+                        "--req", f"name: 'goal' type: MODEL"])
+
+        # if queue is empty:
+        if not self.goal_queue:
+            self.node.get_logger().info("Goal queue is empty, current simulation is complete!")
+            return
+
+        # pop the first item from the queue:
+        key = next(iter(self.goal_queue))
+        goal_data = self.goal_queue.pop(key)
+
+        # spawn this goal within the environment:
+        subprocess.Popen(["ros2", "launch", "mrs_robot_launcher", "goal_launch.py", 
+                          "use_sim_time:=true",
+                          "goal_name:=goal", 
+                          f"goal_type:={goal_data[0]}",
+                          f"goal_initial_x_pos:={goal_data[1]}",
+                          f"goal_initial_y_pos:={goal_data[2]}"])
+        
+        # increment the goal_number:
+        self.goal_number += 1
+
+        # build and publish a goal message:
+        msg                             =   Goal()
+        msg.pose.header.stamp           =   self.node.get_clock().now().to_msg()
+        msg.required_capability         =   goal_data[0]
+        msg.pose.pose.position.x        =   goal_data[1]
+        msg.pose.pose.position.y        =   goal_data[2]
+        msg.pose.pose.position.z        =   0.0
+        msg.pose.pose.orientation.w     =   1.0
+
+        # publish:
+        self.node.goal_pub.publish(msg)
+        print(f"Goal published at: ({goal_data[1]}, {goal_data[2]}) with type: {goal_data[0]}!")
 
 # define main execution of node:
 def main():
@@ -354,6 +412,7 @@ def main():
     ros_thread.start()
 
     window = MainWindow(node = node)
+    node.gui = window
     window.show()
 
     # allow python to read signal every 500ms:
