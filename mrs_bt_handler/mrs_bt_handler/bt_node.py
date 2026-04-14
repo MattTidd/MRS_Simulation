@@ -91,6 +91,7 @@ class BTNode(Node):
         ##### create publishers: #####
         # publisher for bid of an agent:
         self.bid_pub = self.create_publisher(Bid, f"/{self.agent_name}/bid", 10)
+        self.goal_pub = self.create_publisher(Goal, "/goal", 10)
 
         ##### action client for navigation: #####
         self.nav_client = ActionClient(self, NavigateToGoal, "navigate_to_goal")
@@ -113,6 +114,14 @@ class BTNode(Node):
 
     # define goal callback method:
     def _goal_callback(self, msg : Goal):
+        # handle goal clearance signal:
+        if msg.required_capability == "":
+            self.get_logger().info("Goal cleared by winner")
+            self.goal       =    None
+            self.all_bids   =    {}
+            self.new_goal   =    False
+            return
+
         # let the user know that the goal has been received:
         self.get_logger().info(f"Goal received at: ({msg.pose.pose.position.x:.2f}, {msg.pose.pose.position.y:.2f})")
 
@@ -193,6 +202,13 @@ class BTNode(Node):
         # return name of winning agent:
         return winner == self.agent_name
     
+    # define method for broadcasting that the goal is complete:
+    def broadcast_goal_clear(self):
+        # create dummy goal message:
+        msg = Goal()
+        self.goal_pub.publish(msg)
+        self.get_logger().info(f"{self.agent_name} broadcasting goal completion")
+
     # define method for rebroadcasting the goal:
     def rebroadcast_goal(self):
         # if navigation fails, call this method:
