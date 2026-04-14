@@ -35,7 +35,7 @@ class IsSimulationStarted(py_trees.behaviour.Behaviour):
             return py_trees.common.Status.SUCCESS
         
         # DEBUG:
-        self.node.get_logger().info(f"currently running {self.__class__.__name__}")
+        # self.node.get_logger().info(f"currently running {self.__class__.__name__}")
         
         # else return failure:
         return py_trees.common.Status.FAILURE
@@ -57,7 +57,7 @@ class ActiveGoal(py_trees.behaviour.Behaviour):
             return py_trees.common.Status.SUCCESS
         
         # DEBUG:
-        self.node.get_logger().info(f"currently running {self.__class__.__name__}")
+        # self.node.get_logger().info(f"currently running {self.__class__.__name__}")
         
         # else return failure:
         return py_trees.common.Status.FAILURE
@@ -146,7 +146,7 @@ class ComputeAndPublishBid(py_trees.behaviour.Behaviour):
         self.bid_published = True
 
         # DEBUG:
-        self.node.get_logger().info(f"currently running {self.__class__.__name__}")
+        # self.node.get_logger().info(f"currently running {self.__class__.__name__}")
 
         # return success after publishing a bid:
         return py_trees.common.Status.SUCCESS
@@ -171,7 +171,7 @@ class WaitForAllBids(py_trees.behaviour.Behaviour):
             return py_trees.common.Status.SUCCESS
         
         # DEBUG:
-        self.node.get_logger().info(f"currently running {self.__class__.__name__}")
+        # self.node.get_logger().info(f"currently running {self.__class__.__name__}")
         
         # otherwise log that you are waiting and return running:
         self.node.get_logger().info(f"Waiting for bids: {n_bids}/{self.node.num_agents}")
@@ -193,7 +193,7 @@ class RemainIdle(py_trees.behaviour.Behaviour):
         self.node.get_logger().info(f"{self.node.agent_name} lost bid, idling...")
 
         # DEBUG:
-        self.node.get_logger().info(f"currently running {self.__class__.__name__}")
+        # self.node.get_logger().info(f"currently running {self.__class__.__name__}")
 
         # return success:
         return py_trees.common.Status.SUCCESS
@@ -216,7 +216,7 @@ class CheckForWin(py_trees.behaviour.Behaviour):
             return py_trees.common.Status.SUCCESS
         
         # otherwise:
-        self.node.get_logger().info(f"{self.node.agent_name} did not win the bid.")
+        # self.node.get_logger().info(f"{self.node.agent_name} did not win the bid.")
         return py_trees.common.Status.FAILURE
 
 # define an action for navigating to the goal:
@@ -262,7 +262,7 @@ class NavigateToGoal(py_trees.behaviour.Behaviour):
             return py_trees.common.Status.FAILURE
         
         # DEBUG:
-        self.node.get_logger().info(f"currently running {self.__class__.__name__}")
+        # self.node.get_logger().info(f"currently running {self.__class__.__name__}")
         
         # global goal position:
         gx = self.node.goal.pose.position.x
