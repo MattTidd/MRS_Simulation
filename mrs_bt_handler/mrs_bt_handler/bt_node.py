@@ -241,6 +241,19 @@ class BTNode(Node):
 
     # define method for killing the policy node:
     def kill_policy(self):
+        # cleanup on goal process if left hanging:
+        if self.goal_process is not None:
+            if self.goal_process.poll() is None:
+                # still running, therefore kill it:
+                os.killpg(os.getpgid(self.goal_process.pid), signal.SIGTERM)
+                self.goal_process.wait()
+                self.get_logger().info("Goal process killed.")
+            else:
+                self.get_logger().info("Goal process already self-terminated.")
+
+        # clear handle:
+        self.goal_process = None
+
         # if there is a policy process active:
         if self.policy_process and self.policy_process.poll() is None:
             # send a SIGTERM to the node:
