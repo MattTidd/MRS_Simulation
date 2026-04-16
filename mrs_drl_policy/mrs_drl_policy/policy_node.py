@@ -217,6 +217,23 @@ class DRLPolicyNode(Node):
                 result_msg.message = "Cancelled by client."
                 return result_msg
             
+            # if goal handle becomes inactive:
+            if not goal_handle.is_active:
+                # stop the agent and bail cleanly:
+                cmd              = TwistStamped()
+                cmd.header.stamp = self.get_clock().now().to_msg()
+
+                # exception handling:
+                try:
+                    self.cmd_pub.publish(cmd)
+                except Exception:
+                    pass
+
+                # formulate a result message:
+                result_msg.success = False
+                result_msg.message = "Goal preempted."
+                return result_msg
+            
             # check to see if goal timeout has been hit:
             if elapsed_time >= self.goal_timeout:
                 # abort via goal handle:
@@ -289,14 +306,26 @@ class DRLPolicyNode(Node):
             cmd.header.frame_id         =    f"{self.agent_name}_base_link"
             cmd.twist.linear.x          =    float(self.action[0]) * self.max_lin_vel
             cmd.twist.angular.z         =    float(self.action[1]) * self.max_angular_vel
-            self.cmd_pub.publish(cmd)
+
+            try:
+                self.cmd_pub.publish(cmd)
+            except Exception:
+                result_msg.success = False
+                result_msg.message = "Preempted mid-publish."
+                return result_msg
 
             ##### EXTRAS #####
             # 4) publish feedback:
             feedback_msg.distance_to_goal   =    float(d_goal)
             feedback_msg.elapsed_time       =    float(elapsed_time)
             feedback_msg.current_pose       =    self.latest_odom.pose.pose
-            goal_handle.publish_feedback(feedback_msg)
+
+            try:
+                goal_handle.publish_feedback(feedback_msg)
+            except Exception:
+                result_msg.success = False
+                result_msg.message = "Preempted mid-publish."
+                return result_msg
 
             # 5) find total distance travelled over the previous step:
             x               =   self.latest_odom.pose.pose.position.x
