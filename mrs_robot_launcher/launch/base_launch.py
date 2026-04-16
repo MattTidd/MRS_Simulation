@@ -70,7 +70,6 @@ def generate_controller_config(agent_name : str, output_dir : str):
 
     # write these parameters to a file:
     path = os.path.join(output_dir, f"{agent_name}_controllers.yaml")
-    print(f"controller path is: {path}")
     with open(path, "w") as f:
         yaml.dump(controller_parameters, f)
 
