@@ -371,7 +371,7 @@ class NavigateToGoal(py_trees.behaviour.Behaviour):
     - Inherits from ``py_trees.behaviour.Behaviour``
     """
     # constructor for the behaviour:
-    def __init__(self, node, timeout : float = 60.0):
+    def __init__(self, node, timeout : float = 30.0):
         """
         Constructor for the behaviour. 
 
