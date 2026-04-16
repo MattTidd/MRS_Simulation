@@ -1,26 +1,36 @@
 # import packages:
 import sys
-import os
-import random
 import time
 import threading
 import signal
 import subprocess
 import rclpy
 from rclpy.node import Node
-from ament_index_python.packages import get_package_share_directory 
 from mrs_drl_interfaces.msg import Goal
 from std_msgs.msg import String
 
 # gui-specific packages:
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QGridLayout, QLabel, QComboBox, QPushButton, QGroupBox, QLineEdit
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QGridLayout, QComboBox, QPushButton, QGroupBox, QLineEdit
 from PyQt5.QtCore import QTimer, Qt, pyqtSignal 
-from qtwidgets import AnimatedToggle
 
 # class for the main node:
 class GuiNode(Node):
+    """
+    Primary class for the ``GuiNode``, which is responsible for hosting the GUI.
+    - Inherits from ``rclpy.node.Node``.
+    """
     # constructor for node:
     def __init__(self):
+        """
+        Constructor for the node. Declares and adds parameters to the class, and instantiates subscribers/publishers. 
+
+        :param positions: List containing the starting positions of each agent, measured globally. 
+        :type positions: list
+
+        :param agent_names: List containing the names of each of the agents. 
+        :type agent_names: list
+        
+        """
         # inherit from parent class:
         super().__init__("bt_gui_node")
 
@@ -49,17 +59,34 @@ class GuiNode(Node):
 
     # define a callback for the goal subscriber:
     def _goal_callback(self, msg : Goal):
+        """
+        Callback method used by the goal subscriber. Calls the ``_publish_next_goal()`` method of the GUI upon receiving 
+        an empty goal message. 
+
+        :param msg: Goal message that is subscribed to. 
+        :type msg: Goal
+        """
         # if receiving an empty goal message:
         if msg.required_capability == "":
             self.gui._publish_next_goal()
 
 # class for the actual GUI:
 class MainWindow(QWidget):
+    """
+    Primary class for the ``MainWindow``, which contains the GUI. Responsible for defining the layout of the elements within
+    the GUI, as well as their functionalities. 
+    - Inherits from ``PyQT5.QtWidgets.QWidget``.
+    """
     # signal for buttons:
     button_handling = pyqtSignal()
 
     # constructor for GUI:
     def __init__(self, node : Node):
+        """
+        Constructor for the GUI. Instantiates the components within the system, and defines their layout within the window. 
+        Also connects the functionality for the resetting of buttons.
+        
+        """
         # inherit from parent class:
         super().__init__()
 
@@ -183,6 +210,10 @@ class MainWindow(QWidget):
 
     # method for locking the buttons:
     def _lock_buttons(self):
+        """
+        Method for locking the buttons contained within the GUI, thus preventing users from hitting them while a 
+        process runs. Locks and modifies the text of buttons. 
+        """
         # lock all buttons:
         self.queue_goal_button.setEnabled(False)
 
@@ -191,6 +222,10 @@ class MainWindow(QWidget):
 
     # method for enabling the buttons:
     def _enable_buttons(self):
+        """
+        Method for enabling the buttons contained within the GUI, thus allowing users to interact with them. Unlocks the buttons
+        and sets their text to their native values prior to being locked.
+        """
         # unlock buttons:
         self.queue_goal_button.setEnabled(True)
 
@@ -199,6 +234,17 @@ class MainWindow(QWidget):
 
     # method for killing nodes:
     def _kill_namespaced_node(self, namespace : str, node = None):
+        """
+        Method for killing namespaced nodes. Does this by running a ``"kill"`` subprocess on the ``PID`` of the
+        node process. Either accepts single nodes, or if no single node was passed, can be used to kill all nodes
+        relating to the odometry of the agent.
+
+        :param namespace: Namespace used by the node to be killed. 
+        :type namespace: str
+
+        :param node: Individual node to be killed.
+        :type node: str
+        """
         # list the process names of the odometry executables:
         nodes = ["ekf_node", "covariance_filter_node", "rf2o_laser_odom"]
 
@@ -236,6 +282,10 @@ class MainWindow(QWidget):
 
     # method for queuing goals:
     def _on_queue_goal_clicked(self):
+        """
+        Method for when the queue goal button has been hit. Locks all buttons on the GUI and instantiates another thread, 
+        which calls the ``_goal_queue_process()`` method.
+        """
         # lock buttons:
         self._lock_buttons()
 
@@ -244,6 +294,11 @@ class MainWindow(QWidget):
 
     # method for goal queue process:
     def _goal_queue_process(self):
+        """
+        Method responsible for the actual queuing of goals. This method is ran within its own thread. Extracts values 
+        related to the desired goal, verifies that they are correct, and then adds that goal to a goal queue dictionary, before 
+        unlocking the buttons of the GUI.
+        """
         # print to the user:
         self.node.get_logger().info(f"Adding goal to queue...")
 
@@ -274,6 +329,10 @@ class MainWindow(QWidget):
 
     # method for pressing the reset sim button:
     def _on_reset_sim_clicked(self):
+        """
+        Method for when the reset sim button has been hit. Locks all buttons on the GUI and instantiates another thread, 
+        which calls the ``_reset_sim_process()`` method. 
+        """
         # lock buttons:
         self._lock_buttons()
 
@@ -283,8 +342,18 @@ class MainWindow(QWidget):
 
     # method for reset sim process:
     def _reset_sim_process(self, agent_name : str):
+        """
+        Method responsible for the actual resetting of the simulation. This method is ran within its own thread. Extracts the 
+        positions of each agent, and moves the agent to its initial pose using a subprocess Gazebo service call. The 
+        odometric nodes of the agent are then killed using the ``_kill_namespaced_node()`` method, and are relaunched. The goal is 
+        also killed using the ``_kill_namespaced_node()`` method, and removed from the simulation using a subprocess Gazebo service call.
+        Finally, the goal queue is cleared and the buttons are re-enabled. 
+
+        :param agent_name: Name of the agent to be reset.
+        :type agent_name: str
+        """
         # need to extract the positions of each agent:
-        pos = self.agent_positions[agent_name]
+        pos  = self.agent_positions[agent_name]
         x, y = pos[0], pos[1]
 
         # move the position of the agent name passed to the process:
@@ -319,6 +388,10 @@ class MainWindow(QWidget):
 
     # method for pressing the start sim button:
     def _on_start_sim_clicked(self):
+        """
+        Method for when the start simulation button has been hit. Locks all buttons on the GUI and instantiates another thread,
+        which calls the ``_start_sim_process()`` method. 
+        """
         # lock buttons:
         self._lock_buttons()
 
@@ -327,9 +400,14 @@ class MainWindow(QWidget):
 
     # method for start sim process:
     def _start_sim_process(self):
+        """
+        Method responsible for the starting the simultion. This method is ran within its own thread. Populates and publishes a message
+        signalling that the simulation has started. Then, this method checks for any goals within the queue. If a goal is found, the 
+        ``_publish_next_goal()`` method is called. If no goals are found, then nothing happens. After this check, the buttons are re-enabled.
+        """
         # 1 - SEND THE SIGNAL THAT THE SIMULATION HAS STARTED:
         # populate the start sim message:
-        msg = String()
+        msg      = String()
         msg.data = "start"
 
         # publish the message:
@@ -348,6 +426,15 @@ class MainWindow(QWidget):
 
     # method for publishing goals:
     def _publish_next_goal(self):
+        """
+        Method responsible for publishing the next goal. First, it checks if the goal number is not zero. If so, the method logs that 
+        the goal has been complete, deletes the previous goal using the ``_kill_namespaced_node()`` method, and removes the goal from the 
+        simulation using a subprocess Gazebo service call.
+
+        If the queue is not empty, this method then pops the first item from the queue, and spawns it within the environment using a 
+        subprocess Gazebo service call. Following this, a goal message is built and published on the ``/goal`` topic, for agents to auction
+        for.
+        """
         # if it is not the first goal:
         if self.goal_number != 0:
             # display to user:
@@ -384,13 +471,13 @@ class MainWindow(QWidget):
         self.goal_number += 1
 
         # build and publish a goal message:
-        msg                             =   Goal()
-        msg.pose.header.stamp           =   self.node.get_clock().now().to_msg()
-        msg.required_capability         =   goal_data[0]
-        msg.pose.pose.position.x        =   goal_data[1]
-        msg.pose.pose.position.y        =   goal_data[2]
-        msg.pose.pose.position.z        =   0.0
-        msg.pose.pose.orientation.w     =   1.0
+        msg                         = Goal()
+        msg.pose.header.stamp       = self.node.get_clock().now().to_msg()
+        msg.required_capability     = goal_data[0]
+        msg.pose.pose.position.x    = goal_data[1]
+        msg.pose.pose.position.y    = goal_data[2]
+        msg.pose.pose.position.z    = 0.0
+        msg.pose.pose.orientation.w = 1.0
 
         # publish:
         self.node.goal_pub.publish(msg)
@@ -411,7 +498,7 @@ def main():
     ros_thread = threading.Thread(target = rclpy.spin, args = (node, ), daemon = True)
     ros_thread.start()
 
-    window = MainWindow(node = node)
+    window   = MainWindow(node = node)
     node.gui = window
     window.show()
 
