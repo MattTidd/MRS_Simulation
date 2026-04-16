@@ -314,7 +314,7 @@ class RemainIdle(py_trees.behaviour.Behaviour):
         
         """
         # log status:
-        self.node.get_logger().info(f"{self.node.agent_name} lost bid, idling...")
+        # self.node.get_logger().info(f"{self.node.agent_name} lost bid, idling...")
 
         # DEBUG:
         # self.node.get_logger().info(f"currently running {self.__class__.__name__}")
