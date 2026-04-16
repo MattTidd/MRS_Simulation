@@ -1,12 +1,13 @@
 # import packages:
 import py_trees
+from rclpy.node import Node
 
 # allocation behaviours:
 from mrs_bt_handler.behaviours import (
     IsSimulationStarted,        # condition for checking if the simulation has started or not
     ActiveGoal,                 # condition for checking if there is an active goal or not
     ComputeAndPublishBid,       # action for computing and publishing a bid
-    WaitForAllBids,             # condition for waiting to see if all of the bids have arrived
+    AllBidsReceived,            # condition for checking to see if all of the bids have arrived
     RemainIdle,                 # action for remaining idle when not selected
     CheckForWin,                # condition for checking to see if a given agent has won the auction
     NavigateToGoal,             # action for navigating to the goal location
@@ -14,18 +15,28 @@ from mrs_bt_handler.behaviours import (
 )
 
 # need to define a method for creating trees:
-def create_tree(node, model_path: str = "") -> py_trees.trees.BehaviourTree:
+def create_tree(node : Node, model_path: str = "") -> py_trees.trees.BehaviourTree:
+    """
+    Function for creating a behaviour tree.
+
+    :param node: The ROS2 BT node to register the behaviours to.
+    :type node: Node
+
+    :param model_path: The path to the suitability model to be used.
+    :type model_path: str
+    
+    """
     # instantiate the condition nodes:
-    is_sim_started      =   IsSimulationStarted(node)
-    active_goal         =   ActiveGoal(node)
-    wait_for_bids       =   WaitForAllBids(node)
-    check_for_win       =   CheckForWin(node)
+    is_sim_started = IsSimulationStarted(node)
+    active_goal    = ActiveGoal(node)
+    wait_for_bids  = AllBidsReceived(node)
+    check_for_win  = CheckForWin(node)
 
     # instantiate the action nodes:
-    compute_bid         =   ComputeAndPublishBid(node, model_path)
-    remain_idle         =   RemainIdle(node)
-    navigate_to_goal    =   NavigateToGoal(node)
-    recall_auction      =   RecallAuction(node)
+    compute_bid      = ComputeAndPublishBid(node, model_path)
+    remain_idle      = RemainIdle(node)
+    navigate_to_goal = NavigateToGoal(node)
+    recall_auction   = RecallAuction(node)
 
     # main execution tree:
     execution_tree = py_trees.composites.Selector(
