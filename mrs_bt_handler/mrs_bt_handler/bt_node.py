@@ -5,10 +5,8 @@ from rclpy.action import ActionClient
 from rclpy.executors import MultiThreadedExecutor
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import PoseStamped
-from std_msgs.msg import Float32, String
+from std_msgs.msg import String
 
-import py_trees
-import py_trees_ros
 import subprocess
 import signal
 import os
@@ -22,10 +20,44 @@ from mrs_bt_handler.trees.agent_tree import create_tree
 
 # define a class for the node:
 class BTNode(Node):
+    """
+    Primary class for the ``BTNode``, which is responsible for hosting and ticking the developed behaviour tree, and routing information
+    into variables that are accessed by the tree.
+    - Inherits from ``rclpy.node.Node``
+    """
     # constructor for the node:
     def __init__(self):
+        """
+        Constructor for the node. Declares and adds parameters to the class, instantiates subscribers and publishers, and starts
+        running a dedicated thread for the tree.
+
+        :param agent_name: Name of the agent.
+        :type agent_name: str
+
+        :param agent_type: Type of the agent. Representative of its capabilities.
+        :type agent_type: str
+
+        :param agent_initial_x: Initial x position of the agent within the environment, measured globally.
+        :type agent_initial_x: float
+
+        :param agent_initial_y: Initial y position of the agent within the environment, measured globally.
+        :type agent_initial_y: float
+
+        :param model_name: Name of the DRL model to be used. 
+        :type model_name: str
+
+        :param num_agents: Number of agents within the system.
+        :type num_agents: int
+
+        :param model_path: Path to the directory containing the suitability inference model.
+        :type model_path: str
+
+        :param goal_tolerance: Minimum threshold for successful navigation, in meters.
+        :type goal_tolerance: float
+
+        """
         # inherit from parent class:
-        super().__init__("bt_node")     # set the name of the node
+        super().__init__("bt_node") # set the name of the node
 
         ##### declare parameters: #####
         self.declare_parameter("agent_name", "agent1")
@@ -38,14 +70,14 @@ class BTNode(Node):
         self.declare_parameter("goal_tolerance", 0.125)
 
         ##### add parameters to the class: #####
-        self.agent_name         =   self.get_parameter("agent_name").value
-        self.agent_type         =   self.get_parameter("agent_type").value
-        self.agent_initial_x    =   self.get_parameter("agent_initial_x").value
-        self.agent_initial_y    =   self.get_parameter("agent_initial_y").value
-        self.model_name         =   self.get_parameter("model_name").value
-        self.num_agents         =   self.get_parameter("num_agents").value
-        self.model_path         =   self.get_parameter("model_path").value
-        self.goal_tolerance     =   self.get_parameter("goal_tolerance").value
+        self.agent_name      = self.get_parameter("agent_name").value
+        self.agent_type      = self.get_parameter("agent_type").value
+        self.agent_initial_x = self.get_parameter("agent_initial_x").value
+        self.agent_initial_y = self.get_parameter("agent_initial_y").value
+        self.model_name      = self.get_parameter("model_name").value
+        self.num_agents      = self.get_parameter("num_agents").value
+        self.model_path      = self.get_parameter("model_path").value
+        self.goal_tolerance  = self.get_parameter("goal_tolerance").value
 
         ##### storage for the important states that are used by the node/tree: #####
         self.goal:                  PoseStamped     |   None    =     None      # current pose of goal
@@ -90,7 +122,7 @@ class BTNode(Node):
 
         ##### create publishers: #####
         # publisher for bid of an agent:
-        self.bid_pub = self.create_publisher(Bid, f"/{self.agent_name}/bid", 10)
+        self.bid_pub  = self.create_publisher(Bid, f"/{self.agent_name}/bid", 10)
         self.goal_pub = self.create_publisher(Goal, "/goal", 10)
 
         ##### action client for navigation: #####
@@ -102,11 +134,15 @@ class BTNode(Node):
 
         # run tree in a separate thread:
         self._tree_thread = threading.Thread(target = self._run_tree, args = (10, ), daemon = True).start()
-        # self.tree_timer = self.create_timer(0.1, self._tick_tree)   # tick the tree at 10Hz
-        # self.get_logger().info(f"BT node started for {self.agent_name}")
 
     # method for ticking BT in thread:
     def _run_tree(self, frequency : int):
+        """
+        Method for ticking the tree. 
+
+        :param frequency: Frequency at which the tree is ticked.
+        :type frequency: int
+        """
         while rclpy.ok():
             # tick the tree:
             self.tree.tick()
@@ -114,12 +150,20 @@ class BTNode(Node):
 
     # define goal callback method:
     def _goal_callback(self, msg : Goal):
+        """
+        Callback method called by the goal subscriber. Adds a received goal pose to the class, as well as its required capability.
+        Resets the dictionary of bids upon receiving a new goal. Also handles interpretation of empty goal messages, which 
+        signify completed goals.
+
+        :param msg: Goal message that is subscribed to. 
+        :type msg: Goal
+        """
         # handle goal clearance signal:
         if msg.required_capability == "":
             self.get_logger().info("Goal cleared by winner")
-            self.goal       =    None
-            self.all_bids   =    {}
-            self.new_goal   =    False
+            self.goal     = None
+            self.all_bids = {}
+            self.new_goal = False
             return
 
         # let the user know that the goal has been received:
@@ -139,6 +183,13 @@ class BTNode(Node):
 
     # define the odometry callback method:
     def _odom_callback(self, msg : Odometry):
+        """
+        Odometry callback called by the odometry subscriber. Tracks the total distance that the agent has travelled thus far. 
+
+        :param msg: Odometry message that is subscribed to. 
+        :type msg: Odometry
+        
+        """
         # track the total distance that the agent has travelled:
         if self.latest_odom is not None:
             # get previous values:
@@ -157,11 +208,26 @@ class BTNode(Node):
         
     # define the bid callback method:
     def _bid_callback(self, msg : Bid, agent_name : str):
+        """
+        Bid callback called by the bid subscriber. Adds the bid of an agent to the list of total bids.
+
+        :param msg: Bid message that is subscribed to. 
+        :type msg: Bid
+
+        :param agent_name: Name of the agent whose bid was received.
+        :type agent_name: str
+        """
         # add the bid of the agent to the list of total bids:
         self.all_bids[agent_name] = (msg.suitability, msg.capability)
 
     # define the start callback method:
     def _start_callback(self, msg : String):
+        """
+        Start callback called by the start subscriber. Reads whether or not the simulation has started or not. 
+
+        :param msg: Start message that is subscribed to. 
+        :type msg: String
+        """
         # if the topic reads start:
         if msg.data == "start":
             # set the flag for simulation starting to true:
@@ -173,19 +239,33 @@ class BTNode(Node):
 
     # define method for publishing a bid:
     def publish_bid(self, suitability : float):
+        """
+        Method for publishing a bid. Takes a suitability, and populates a bid using the name and capability of the agent, along 
+        with the calculated suitability. 
+
+        :param suitability: Calculated suitability of the agent for the task at hand. 
+        :type suitability: float
+        """
         # create empty Float32 message:
         msg = Bid()
 
         # populate the bid:
-        msg.agent_name      =    self.agent_name
-        msg.suitability     =    suitability
-        msg.capability      =    self.agent_type
+        msg.agent_name  = self.agent_name
+        msg.suitability = suitability
+        msg.capability  = self.agent_type
 
         # publish the bid:
         self.bid_pub.publish(msg)
 
     # define a method for determining agent that is the winner:
     def is_winner(self) -> bool:
+        """
+        Method for determining the winner of an auction. Checks first to see if all of the bids are in, then checks the eligibility 
+        of the bids. If the agent is not eligible, return false. Determines the name of the winner agent.
+
+        :returns: ``False`` if not eligible or all bids are not in yet, and the ``agent_name`` of the winning agent.  
+        
+        """
         # if not all bids are in yet:
         if len(self.all_bids) < self.num_agents:
             return False
@@ -204,6 +284,11 @@ class BTNode(Node):
     
     # define method for broadcasting that the goal is complete:
     def broadcast_goal_clear(self):
+        """
+        Method for broadcasting if a goal has been cleared. Creates a dummy message and publishes it, as an empty required capability 
+        is interpreted as goal completion. 
+
+        """
         # create dummy goal message:
         msg = Goal()
         self.goal_pub.publish(msg)
@@ -211,6 +296,10 @@ class BTNode(Node):
 
     # define method for spinning the navigation policy and goal nodes up:
     def spin_up_policy(self):
+        """
+        Method for spinning up the policy and goal processes. Checks if either are inactive, and if so, spins them up via subprocesses.
+        
+        """
         # if there is no active policy process:
         if self.policy_process is None or self.policy_process.poll() is not None:
             # spin up node, similar to GUI:
@@ -230,6 +319,10 @@ class BTNode(Node):
 
     # define method for killing the policy node:
     def kill_policy(self):
+        """
+        Method for killing the policy. Performs cleanup on the goal process if it has not self-terminated, and then sends a 
+        ``SIGTERM`` to the policy process. 
+        """
         # cleanup on goal process if left hanging:
         if self.goal_process is not None:
             if self.goal_process.poll() is None:
