@@ -135,6 +135,9 @@ class BTNode(Node):
         # run tree in a separate thread:
         self._tree_thread = threading.Thread(target = self._run_tree, args = (10, ), daemon = True).start()
 
+        # instantiate a thread lock:
+        self._odom_lock = threading.Lock()
+
     # method for ticking BT in thread:
     def _run_tree(self, frequency : int):
         """
@@ -190,21 +193,22 @@ class BTNode(Node):
         :type msg: Odometry
         
         """
-        # track the total distance that the agent has travelled:
-        if self.latest_odom is not None:
-            # get previous values:
-            x_prev = self.latest_odom.pose.pose.position.x
-            y_prev = self.latest_odom.pose.pose.position.y
+        with self._odom_lock:
+            # track the total distance that the agent has travelled:
+            if self.latest_odom is not None:
+                # get previous values:
+                x_prev = self.latest_odom.pose.pose.position.x
+                y_prev = self.latest_odom.pose.pose.position.y
 
-            # get current values from msg:
-            x = msg.pose.pose.position.x
-            y = msg.pose.pose.position.y
+                # get current values from msg:
+                x = msg.pose.pose.position.x
+                y = msg.pose.pose.position.y
 
-            # compute total distance:
-            self.total_distance += np.sqrt((x - x_prev)**2 + (y - y_prev)**2)
-        
-        # advance latest odom via msg:
-        self.latest_odom = msg
+                # compute total distance:
+                self.total_distance += np.sqrt((x - x_prev)**2 + (y - y_prev)**2)
+            
+            # advance latest odom via msg:
+            self.latest_odom = msg
         
     # define the bid callback method:
     def _bid_callback(self, msg : Bid, agent_name : str):
@@ -223,7 +227,9 @@ class BTNode(Node):
     # define the start callback method:
     def _start_callback(self, msg : String):
         """
-        Start callback called by the start subscriber. Reads whether or not the simulation has started or not. 
+        Start callback called by the start subscriber. Reads whether or not the simulation has started or not.
+        Also is used to determine when to reset the objective parameters of an agent. On reset, the load history, 
+        total distance, and latest odometry are reset. 
 
         :param msg: Start message that is subscribed to. 
         :type msg: String
@@ -232,10 +238,18 @@ class BTNode(Node):
         if msg.data == "start":
             # set the flag for simulation starting to true:
             self.simulation_started = True
-        # otherwise if the topic reads stop:
-        elif msg.data == "stop":
-            # set the flag for simulation starting to false:
-            self.simulation_started = False
+        # otherwise if the topic reads reset:
+        elif msg.data == "reset":
+            with self._odom_lock:
+                # set the flag for simulation starting to false:
+                self.simulation_started = False
+
+                # reset the objective parameters of the agent:
+                self.load_history   = 0.0
+                self.total_distance = 0.0
+
+                # drop the stale odom reference:
+                self.latest_odom = None
 
     # define method for publishing a bid:
     def publish_bid(self, suitability : float):

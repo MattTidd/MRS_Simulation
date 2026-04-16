@@ -385,7 +385,13 @@ class MainWindow(QWidget):
 
         # clear the goal queue:
         self.goal_queue.clear()
-        self.node.get_logger().info(f"the goal queue is now: {self.goal_queue}")
+
+        # formulate a reset message:
+        msg      = String()
+        msg.data = "reset"
+
+        # publish the message:
+        self.node.start_pub.publish(msg)
 
         # re-enable the buttons:
         time.sleep(2)
