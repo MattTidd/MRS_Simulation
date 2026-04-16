@@ -81,12 +81,12 @@ def generate_bridge_config(agent_names : list) -> str:
 
 def generate_launch_description():
     # define the paths:
-    pkg_path                =    get_package_share_directory("mrs_robot_launcher")
-    bt_pkg_path             =    get_package_share_directory("mrs_bt_handler")
-    template_path           =    PathJoinSubstitution([pkg_path, "launch", "base_launch.py"])
-    bt_launch_path          =    PathJoinSubstitution([bt_pkg_path, "launch", "bt_launch.py"])
-    gazebo_launch_path      =    PathJoinSubstitution([pkg_path, "launch", "gazebo_launch.py"])
-    goal_launch_path        =    PathJoinSubstitution([pkg_path, "launch", "goal_launch.py"])
+    pkg_path           = get_package_share_directory("mrs_robot_launcher")
+    bt_pkg_path        = get_package_share_directory("mrs_bt_handler")
+    template_path      = PathJoinSubstitution([pkg_path, "launch", "base_launch.py"])
+    bt_launch_path     = PathJoinSubstitution([bt_pkg_path, "launch", "bt_launch.py"])
+    gazebo_launch_path = PathJoinSubstitution([pkg_path, "launch", "gazebo_launch.py"])
+    goal_launch_path   = PathJoinSubstitution([pkg_path, "launch", "goal_launch.py"])
 
     # define the arguments for launching:
     use_sim_time = LaunchConfiguration("use_sim_time")
@@ -207,7 +207,8 @@ def generate_launch_description():
         name = "bt_gui",
         parameters = [{
             "agent_names" : agent_names,
-            "positions" : flattened_positions
+            "positions"   : flattened_positions,
+            "world_name"  : world
         }]
     )
 

@@ -1,4 +1,5 @@
 # import packages:
+import re
 import sys
 import time
 import threading
@@ -43,12 +44,16 @@ class GuiNode(Node):
         # declare parameters:
         self.declare_parameter("positions", [0.0])
         self.declare_parameter("agent_names", [""])
+        self.declare_parameter("world_name", "world_1")
 
-        # add parameter to the class:
-        flat                    =    self.get_parameter("positions").value
-        names                   =    self.get_parameter("agent_names").value
-        positions               =    [[flat[i], flat[i+1]] for i in range(0, len(flat), 2)]
-        self.agent_positions    =    dict(zip(names, positions))
+        # add parameters to the class:
+        flat                 = self.get_parameter("positions").value
+        names                = self.get_parameter("agent_names").value
+        world_path           = self.get_parameter("world_name").value
+        
+        self.world_name      = re.split(r'[/.]', world_path)[-2]
+        positions            = [[flat[i], flat[i+1]] for i in range(0, len(flat), 2)]
+        self.agent_positions = dict(zip(names, positions))
 
         # establish subscribers:
         self.goal_sub  = self.create_subscription(Goal, "/goal", self._goal_callback, 10)
@@ -357,7 +362,7 @@ class MainWindow(QWidget):
         x, y = pos[0], pos[1]
 
         # move the position of the agent name passed to the process:
-        subprocess.run(["ign", "service", "-s", "/world/world_1/set_pose",
+        subprocess.run(["ign", "service", "-s", f"/world/{self.node.world_name}/set_pose",
                         "--reqtype", "ignition.msgs.Pose",
                         "--reptype", "ignition.msgs.Boolean",
                         "--timeout", "2000",
@@ -372,7 +377,7 @@ class MainWindow(QWidget):
         # despawn the goal:
         self._kill_namespaced_node(namespace = "goal", node = "robot_state_pub")
 
-        subprocess.run(["ign", "service", "-s", "/world/world_1/remove",
+        subprocess.run(["ign", "service", "-s", f"/world/{self.node.world_name}/remove",
                     "--reqtype", "ignition.msgs.Entity",
                     "--reptype", "ignition.msgs.Boolean",
                     "--timeout", "2000",
@@ -444,7 +449,7 @@ class MainWindow(QWidget):
             self._kill_namespaced_node(namespace = "goal", node = "robot_state_pub")
 
             # despawn the goal body in the simulation:
-            subprocess.run(["ign", "service", "-s", "/world/world_1/remove",
+            subprocess.run(["ign", "service", "-s", f"/world/{self.node.world_name}/remove",
                         "--reqtype", "ignition.msgs.Entity",
                         "--reptype", "ignition.msgs.Boolean",
                         "--timeout", "2000",
