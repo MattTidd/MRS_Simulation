@@ -43,6 +43,9 @@ class BTNode(Node):
         :param agent_initial_y: Initial y position of the agent within the environment, measured globally.
         :type agent_initial_y: float
 
+        :param agent_initial_yaw: Initial yaw orientation of the agent within the environment, measured globally.
+        :type agent_initial_yaw: float
+
         :param model_name: Name of the DRL model to be used. 
         :type model_name: str
 
@@ -64,20 +67,22 @@ class BTNode(Node):
         self.declare_parameter("agent_type", "typeA")
         self.declare_parameter("agent_initial_x", 0.0)
         self.declare_parameter("agent_initial_y", 0.0)
+        self.declare_parameter("agent_initial_yaw", 0.0)
         self.declare_parameter("model_name", "SAC_001")
         self.declare_parameter("num_agents", 2)
         self.declare_parameter("model_path", "")
         self.declare_parameter("goal_tolerance", 0.125)
 
         ##### add parameters to the class: #####
-        self.agent_name      = self.get_parameter("agent_name").value
-        self.agent_type      = self.get_parameter("agent_type").value
-        self.agent_initial_x = self.get_parameter("agent_initial_x").value
-        self.agent_initial_y = self.get_parameter("agent_initial_y").value
-        self.model_name      = self.get_parameter("model_name").value
-        self.num_agents      = self.get_parameter("num_agents").value
-        self.model_path      = self.get_parameter("model_path").value
-        self.goal_tolerance  = self.get_parameter("goal_tolerance").value
+        self.agent_name        = self.get_parameter("agent_name").value
+        self.agent_type        = self.get_parameter("agent_type").value
+        self.agent_initial_x   = self.get_parameter("agent_initial_x").value
+        self.agent_initial_y   = self.get_parameter("agent_initial_y").value
+        self.agent_initial_yaw = self.get_parameter("agent_initial_yaw").value
+        self.model_name        = self.get_parameter("model_name").value
+        self.num_agents        = self.get_parameter("num_agents").value
+        self.model_path        = self.get_parameter("model_path").value
+        self.goal_tolerance    = self.get_parameter("goal_tolerance").value
 
         ##### storage for the important states that are used by the node/tree: #####
         self.goal:                  PoseStamped     |   None    =     None      # current pose of goal
@@ -125,8 +130,8 @@ class BTNode(Node):
         self.bid_pub  = self.create_publisher(Bid, f"/{self.agent_name}/bid", 10)
         self.goal_pub = self.create_publisher(Goal, "/goal", 10)
 
-        ##### action client for navigation: #####
-        self.nav_client = ActionClient(self, NavigateToGoal, "navigate_to_goal")
+        # ##### action client for navigation: #####
+        # self.nav_client = ActionClient(self, NavigateToGoal, "navigate_to_goal")
 
         ##### build and start the behaviour tree: #####
         self.tree = create_tree(node = self, model_path = self.model_path)
@@ -320,7 +325,8 @@ class BTNode(Node):
             self.policy_process = subprocess.Popen([
                 "ros2", "run", "mrs_drl_policy", "policy_node", "--ros-args", 
                 "-p", f"model_name:={self.model_name}",
-                "-p", f"agent_name:={self.agent_name}"], start_new_session = True)
+                "-p", f"agent_name:={self.agent_name}",
+                "-p", f"agent_initial_yaw:={self.agent_initial_yaw}"], start_new_session = True)
             
         # if there is no active goal process:
         if self.goal_process is None or self.goal_process.poll() is not None:
