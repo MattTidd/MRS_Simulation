@@ -55,9 +55,9 @@ class RegressionNet(nn.Module):
         return self.output_layer(x)
 
 # define the condition node for checking if the simulation has started yet:
-class IsSimulationStarted(py_trees.behaviour.Behaviour):
+class SimulationStarted(py_trees.behaviour.Behaviour):
     """
-    ``IsSimulationStarted`` condition node for use in the behaviour tree. This node returns success upon
+    ``SimulationStarted`` condition node for use in the behaviour tree. This node returns success upon
     verifying that the simulation has started, routes ticks to the next node upon emitting this.
 
     - Inherits from ``py_trees.behaviour.Behaviour``.
@@ -72,7 +72,7 @@ class IsSimulationStarted(py_trees.behaviour.Behaviour):
         
         """
         # inherit from parent class:
-        super().__init__("IsSimulationStarted")
+        super().__init__("SimulationStarted")
 
         # add node to class:
         self.node = node
@@ -145,9 +145,9 @@ class ActiveGoal(py_trees.behaviour.Behaviour):
         return py_trees.common.Status.FAILURE
     
 # define an action for computing and publishing a bid:
-class ComputeAndPublishBid(py_trees.behaviour.Behaviour):
+class SubmitBid(py_trees.behaviour.Behaviour):
     """
-    ``ComputeAndPublishBid`` action node for use in the behaviour tree. This node loads the suitability model passed to the tree, and uses
+    ``SubmitBid`` action node for use in the behaviour tree. This node loads the suitability model passed to the tree, and uses
     it to calculate a bid for the active goal, submitting this bid onto the ``/bid`` topic of the agent.
 
     - Inherits from ``py_trees.behaviour.Behaviour``.
@@ -177,7 +177,7 @@ class ComputeAndPublishBid(py_trees.behaviour.Behaviour):
         
         """
         # inherit from parent class:
-        super().__init__("ComputeAndPublishBid")
+        super().__init__("SubmitBid")
 
         # add to class:
         self.node           = node
