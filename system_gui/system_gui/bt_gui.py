@@ -6,6 +6,7 @@ import threading
 import signal
 import subprocess
 import rclpy
+import numpy as np
 from rclpy.node import Node
 from mrs_drl_interfaces.msg import Goal
 from std_msgs.msg import String
@@ -43,17 +44,20 @@ class GuiNode(Node):
 
         # declare parameters:
         self.declare_parameter("positions", [0.0])
+        self.declare_parameter("agent_initial_yaw", [0.0])
         self.declare_parameter("agent_names", [""])
         self.declare_parameter("world_name", "world_1")
 
         # add parameters to the class:
         flat                 = self.get_parameter("positions").value
+        yaws                 = self.get_parameter("agent_initial_yaw").value
         names                = self.get_parameter("agent_names").value
         world_path           = self.get_parameter("world_name").value
         
         self.world_name      = re.split(r'[/.]', world_path)[-2]
         positions            = [[flat[i], flat[i+1]] for i in range(0, len(flat), 2)]
         self.agent_positions = dict(zip(names, positions))
+        self.agent_yaws      = dict(zip(names, yaws))
 
         # establish subscribers:
         self.goal_sub  = self.create_subscription(Goal, "/goal", self._goal_callback, 10)
@@ -100,6 +104,7 @@ class MainWindow(QWidget):
 
         # get the position dict:
         self.agent_positions = self.node.agent_positions
+        self.agent_yaws      = self.node.agent_yaws
 
         # flag for despawning:
         self.goal_number = 0
@@ -359,14 +364,17 @@ class MainWindow(QWidget):
         """
         # need to extract the positions of each agent:
         pos  = self.agent_positions[agent_name]
+        yaw  = self.agent_yaws[agent_name]
         x, y = pos[0], pos[1]
+        qz = np.sin(yaw / 2)
+        qw = np.cos(yaw / 2)
 
         # move the position of the agent name passed to the process:
         subprocess.run(["ign", "service", "-s", f"/world/{self.node.world_name}/set_pose",
                         "--reqtype", "ignition.msgs.Pose",
                         "--reptype", "ignition.msgs.Boolean",
                         "--timeout", "2000",
-                        "--req", f"name: '{agent_name}', position: {{x: {x}, y: {y}, z: {0.0}}}"])
+                        "--req", f"name: '{agent_name}', position: {{x: {x}, y: {y}, z: {0.0}}}, orientation: {{x: {0.0}, y: {0.0}, z: {qz}, w: {qw}}}"])
         
         # kill the nodes related to the odometry of that agent:
         self._kill_namespaced_node(namespace = agent_name)
