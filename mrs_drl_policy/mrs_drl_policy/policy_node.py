@@ -30,6 +30,7 @@ class DRLPolicyNode(Node):
         self.declare_parameter('goal_tolerance', 0.5)
         self.declare_parameter('obstacle_tolerance', 0.20)
         self.declare_parameter('model_name', 'SAC_001')
+        self.declare_parameter("agent_initial_yaw", 0.0)
         self.declare_parameter('max_lin_vel', 0.6)
         self.declare_parameter('max_angular_vel', 0.9)
         self.declare_parameter('goal_timeout', 30.0)
@@ -39,6 +40,7 @@ class DRLPolicyNode(Node):
         self.default_goal_tolerance         =   self.get_parameter('goal_tolerance').value
         self.default_obstacle_tolerance     =   self.get_parameter('obstacle_tolerance').value
         self.model_name                     =   self.get_parameter('model_name').value
+        self.agent_initial_yaw              =   self.get_parameter("agent_initial_yaw").value
         self.model_type                     =   self.model_name.split('_')[0]
         self.max_lin_vel                    =   self.get_parameter('max_lin_vel').value
         self.max_angular_vel                =   self.get_parameter('max_angular_vel').value
@@ -355,19 +357,27 @@ class DRLPolicyNode(Node):
         (dx, dy, dgoal, s_theta, c_theta, s_phi, c_phi, vx, vy, LiDAR scans)
         
         """ 
-        # extract raw odometry and sensor data:
-        agent_pos       =   odom.pose.pose.position                 # agent (x, y, z) in initial odom frame
-        ori_quat        =   odom.pose.pose.orientation              # orientation quaternion
-        agent_yaw       =   self._yaw_from_quaternion(ori_quat)     # convert to eulerian yaw angle
-        agent_vx        =   self.action[0]                          # agent's velocity in the moving frame
-        agent_vyaw      =   self.action[1]                          # agent's yaw velocity about the Z axis in the moving frame
+        # extract raw odometry and sensor data -> IN THE ODOM FRAME:
+        agent_pos       =   odom.pose.pose.position             # agent (x, y, z) in initial odom frame
+        ori_quat        =   odom.pose.pose.orientation          # orientation quaternion, in the odom frame
 
-        # define goal posiiton:
-        goal_pos        =   target.pose.position                    # position of the target relative to odom frame
+        # get the total angle of the agent -> IN THE GLOBAL FRAME:
+        agent_yaw       =   self.agent_initial_yaw + self._yaw_from_quaternion(ori_quat)
+        agent_vx        =   self.action[0] # agent's velocity in the moving frame
+        agent_vyaw      =   self.action[1] # agent's yaw velocity about the Z axis in the moving frame
 
-        # perform the calculations required to form the observation:
-        dx              =   goal_pos.x - agent_pos.x
-        dy              =   goal_pos.y - agent_pos.y
+        # define goal posiiton -> IN THE GLOBAL FRAME:
+        goal_pos        =   target.pose.position  # position of the target
+
+        # perform a transform from rotated odom frame -> GLOBAL FRAME:
+        cos_spawn = np.cos(self.agent_initial_yaw)
+        sin_spawn = np.sin(self.agent_initial_yaw)
+        agent_x_global   =   cos_spawn * agent_pos.x - sin_spawn * agent_pos.y
+        agent_y_global   =   sin_spawn * agent_pos.x + cos_spawn * agent_pos.y
+
+        # perform the calculations required to form the observation -> IN THE GLOBAL FRAME:
+        dx              =   goal_pos.x - agent_x_global
+        dy              =   goal_pos.y - agent_y_global
         dgoal           =   np.sqrt(dx**2 + dy**2)
 
         bearing         =   np.arctan2(dy, dx, dtype = np.float32) % (2 * np.pi)
@@ -396,7 +406,7 @@ class DRLPolicyNode(Node):
         self._obs_buffer[5:7]   =    c_bearing, s_bearing
         self._obs_buffer[7:9]   =    agent_vx, agent_vyaw
         self._obs_buffer[9:]    =    lidar_obs
-
+        
         return self._obs_buffer
 
     # define function for normalizing observation:
