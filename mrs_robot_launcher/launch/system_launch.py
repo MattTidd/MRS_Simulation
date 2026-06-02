@@ -118,15 +118,14 @@ def generate_launch_description():
     agent_initial_ys    = [str(p[1]) for p in positions]
     agent_initial_yaws  = ["0.0", "0.0"]
     flattened_positions = [float(coord) for p in positions for coord in p]
-
-    # should have a seperate goal manager node probably that provides pertinent information about the goal, 
-    # and spawns and kills goals as information comes in
+    flattened_yaws      = [float(y) for y in agent_initial_yaws]
 
     num_agents = len(agent_names)
-    a_types = np.random.permutation(agent_types)
-    delay = 2.5
+    a_types    = np.random.permutation(agent_types)
+    delay      = 2.5
+
     templates = []
-    bts = []
+    bts       = []
 
     # loop over the number of agents:
     for agent in range(num_agents):
@@ -158,7 +157,8 @@ def generate_launch_description():
                                 "agent_type" : a_type,
                                 "num_agents" : str(num_agents),
                                 "agent_initial_x" : str(positions[agent][0]),
-                                "agent_initial_y" : str(positions[agent][1])
+                                "agent_initial_y" : str(positions[agent][1]),
+                                "agent_initial_yaw" : str(agent_initial_yaws[agent])
                                 }.items()
         )
 
@@ -167,22 +167,6 @@ def generate_launch_description():
         
         # add instance of bt node to list of bt nodes:
         bts.append(timed_bar)
-
-    # define the goal settings:
-    goal_name = "goal"
-    goal_type = np.random.choice(["typeA", "typeB"])
-    goal_initial_x_pos = "0.0"
-    goal_initial_y_pos = "0.0"
-
-    # launch the goal:
-    goal_launcher = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource([goal_launch_path]),
-        launch_arguments = {"use_sim_time" : use_sim_time,
-                            "goal_name" : goal_name,
-                            "goal_type" : goal_type,
-                            "goal_initial_x_pos" : goal_initial_x_pos,
-                            "goal_initial_y_pos" : goal_initial_y_pos}.items()
-    )
 
     # launch gazebo:
     gazebo = IncludeLaunchDescription(
@@ -206,9 +190,10 @@ def generate_launch_description():
         executable = "bt_gui_node",
         name = "bt_gui",
         parameters = [{
-            "agent_names" : agent_names,
-            "positions"   : flattened_positions,
-            "world_name"  : world
+            "agent_names"       : agent_names,
+            "positions"         : flattened_positions,
+            "agent_initial_yaw" : flattened_yaws,
+            "world_name"        : world
         }]
     )
 
