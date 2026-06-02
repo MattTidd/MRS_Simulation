@@ -70,7 +70,7 @@
     </model>
 
     <model name='wall_north'>
-      <pose>4.025 0 0.5 -0 0 -0</pose>
+      <pose>4.025 0 0.25 -0 0 -0</pose>
       <link name='wall_north_link'>
         <inertial>
           <inertia>
@@ -87,7 +87,7 @@
         <collision name='wall_north_collision'>
           <geometry>
             <box>
-              <size>0.05 8.1 1</size>
+              <size>0.05 8.1 0.5</size>
             </box>
           </geometry>
           <surface>
@@ -101,7 +101,7 @@
         <visual name='wall_north_visual'>
           <geometry>
             <box>
-              <size>0.05 8.1 1</size>
+              <size>0.05 8.1 0.5</size>
             </box>
           </geometry>
           <material>
@@ -118,7 +118,7 @@
     </model>
 
     <model name='wall_south'>
-      <pose>-4.025 0 0.5 -0 0 -0</pose>
+      <pose>-4.025 0 0.25 -0 0 -0</pose>
       <link name='wall_south_link'>
         <inertial>
           <inertia>
@@ -135,7 +135,7 @@
         <collision name='wall_south_collision'>
           <geometry>
             <box>
-              <size>0.05 8.1 1</size>
+              <size>0.05 8.1 0.5</size>
             </box>
           </geometry>
           <surface>
@@ -149,7 +149,7 @@
         <visual name='wall_south_visual'>
           <geometry>
             <box>
-              <size>0.05 8.1 1</size>
+              <size>0.05 8.1 0.5</size>
             </box>
           </geometry>
           <material>
@@ -166,7 +166,7 @@
     </model>
 
     <model name='wall_east'>
-      <pose>-0 -4.025 0.5 -0 0 -0</pose>
+      <pose>-0 -4.025 0.25 -0 0 -0</pose>
       <link name='wall_east_link'>
         <inertial>
           <inertia>
@@ -183,7 +183,7 @@
         <collision name='wall_east_collision'>
           <geometry>
             <box>
-              <size>8 0.05 1</size>
+              <size>8 0.05 0.5</size>
             </box>
           </geometry>
           <surface>
@@ -197,7 +197,7 @@
         <visual name='wall_east_visual'>
           <geometry>
             <box>
-              <size>8 0.05 1</size>
+              <size>8 0.05 0.5</size>
             </box>
           </geometry>
           <material>
@@ -214,7 +214,7 @@
     </model>
 
     <model name='wall_west'>
-      <pose>-0 4.025 0.5 -0 0 -0</pose>
+      <pose>-0 4.025 0.25 -0 0 -0</pose>
       <link name='wall_west_link'>
         <inertial>
           <inertia>
@@ -231,7 +231,7 @@
         <collision name='wall_west_collision'>
           <geometry>
             <box>
-              <size>8 0.05 1</size>
+              <size>8 0.05 0.5</size>
             </box>
           </geometry>
           <surface>
@@ -245,7 +245,7 @@
         <visual name='wall_west_visual'>
           <geometry>
             <box>
-              <size>8 0.05 1</size>
+              <size>8 0.05 0.5</size>
             </box>
           </geometry>
           <material>
@@ -262,7 +262,7 @@
     </model>
 
     <model name='box'>
-      <pose>-2.7 1.8 0.5 0 0 -0</pose>
+      <pose>-2.7 1.8 0.25 0 0 -0</pose>
       <link name='box_link'>
         <inertial>
           <inertia>
@@ -279,7 +279,7 @@
         <collision name='box_collision'>
           <geometry>
             <box>
-              <size>0.5 0.5 1</size>
+              <size>0.5 0.5 0.5</size>
             </box>
           </geometry>
           <surface>
@@ -293,7 +293,7 @@
         <visual name='box_visual'>
           <geometry>
             <box>
-              <size>0.5 0.5 1</size>
+              <size>0.5 0.5 0.5</size>
             </box>
           </geometry>
           <material>
@@ -310,7 +310,7 @@
     </model>
 
     <model name='box_0'>
-      <pose>-0.3 2.8 0.5 0 0 -0</pose>
+      <pose>-0.3 2.8 0.25 0 0 -0</pose>
       <link name='box_link'>
         <inertial>
           <inertia>
@@ -327,7 +327,7 @@
         <collision name='box_collision'>
           <geometry>
             <box>
-              <size>0.8 0.8 1</size>
+              <size>0.8 0.8 0.5</size>
             </box>
           </geometry>
           <surface>
@@ -341,7 +341,7 @@
         <visual name='box_visual'>
           <geometry>
             <box>
-              <size>0.8 0.8 1</size>
+              <size>0.8 0.8 0.5</size>
             </box>
           </geometry>
           <material>
@@ -358,7 +358,7 @@
     </model>
 
     <model name='box_1'>
-      <pose>-1.0 -0.3 0.5 0 0 -0</pose>
+      <pose>-1.0 -0.3 0.25 0 0 -0</pose>
       <link name='box_link'>
         <inertial>
           <inertia>
@@ -375,7 +375,7 @@
         <collision name='box_collision'>
           <geometry>
             <box>
-              <size>0.4 0.4 1</size>
+              <size>0.4 0.4 0.5</size>
             </box>
           </geometry>
           <surface>
@@ -389,7 +389,7 @@
         <visual name='box_visual'>
           <geometry>
             <box>
-              <size>0.4 0.4 1</size>
+              <size>0.4 0.4 0.5</size>
             </box>
           </geometry>
           <material>
@@ -406,7 +406,7 @@
     </model>
 
     <model name='box_2'>
-      <pose>2.3 -1.1 0.5 0 0 -0</pose>
+      <pose>2.3 -1.1 0.25 0 0 -0</pose>
       <link name='box_link'>
         <inertial>
           <inertia>
@@ -423,7 +423,7 @@
         <collision name='box_collision'>
           <geometry>
             <box>
-              <size>0.6 0.6 1</size>
+              <size>0.6 0.6 0.5</size>
             </box>
           </geometry>
           <surface>
@@ -437,7 +437,7 @@
         <visual name='box_visual'>
           <geometry>
             <box>
-              <size>0.6 0.6 1</size>
+              <size>0.6 0.6 0.5</size>
             </box>
           </geometry>
           <material>
@@ -454,7 +454,7 @@
     </model>
 
     <model name='cylinder'>
-      <pose>2.0 2.6 0.5 -0 -0 0</pose>
+      <pose>2.0 2.6 0.25 -0 -0 0</pose>
       <link name='cylinder_link'>
         <inertial>
           <inertia>
@@ -472,7 +472,7 @@
           <geometry>
             <cylinder>
               <radius>0.25</radius>
-              <length>1</length>
+              <length>0.5</length>
             </cylinder>
           </geometry>
           <surface>
@@ -487,7 +487,7 @@
           <geometry>
             <cylinder>
               <radius>0.25</radius>
-              <length>1</length>
+              <length>0.5</length>
             </cylinder>
           </geometry>
           <material>
@@ -504,7 +504,7 @@
     </model>
 
     <model name='cylinder_0'>
-      <pose>-0.2 -2.4 0.5 0 0 0</pose>
+      <pose>-0.2 -2.4 0.25 0 0 0</pose>
       <link name='cylinder_link'>
         <inertial>
           <inertia>
@@ -522,7 +522,7 @@
           <geometry>
             <cylinder>
               <radius>0.4</radius>
-              <length>1</length>
+              <length>0.5</length>
             </cylinder>
           </geometry>
           <surface>
@@ -537,7 +537,7 @@
           <geometry>
             <cylinder>
               <radius>0.4</radius>
-              <length>1</length>
+              <length>0.5</length>
             </cylinder>
           </geometry>
           <material>
@@ -554,7 +554,7 @@
     </model>
 
     <model name='cylinder_1'>
-      <pose>-2.2 -2.0 0.5 0 0 0</pose>
+      <pose>-2.2 -2.0 0.25 0 0 0</pose>
       <link name='cylinder_link'>
         <inertial>
           <inertia>
@@ -572,7 +572,7 @@
           <geometry>
             <cylinder>
               <radius>0.35</radius>
-              <length>1</length>
+              <length>0.5</length>
             </cylinder>
           </geometry>
           <surface>
@@ -587,7 +587,7 @@
           <geometry>
             <cylinder>
               <radius>0.35</radius>
-              <length>1</length>
+              <length>0.5</length>
             </cylinder>
           </geometry>
           <material>
@@ -604,7 +604,7 @@
     </model>
 
     <model name='cylinder_2'>
-      <pose>0.6 0.6 0.5 0 0 0</pose>
+      <pose>0.6 0.6 0.25 0 0 0</pose>
       <link name='cylinder_link'>
         <inertial>
           <inertia>
@@ -622,7 +622,7 @@
           <geometry>
             <cylinder>
               <radius>0.3</radius>
-              <length>1</length>
+              <length>0.5</length>
             </cylinder>
           </geometry>
           <surface>
@@ -637,7 +637,7 @@
           <geometry>
             <cylinder>
               <radius>0.3</radius>
-              <length>1</length>
+              <length>0.5</length>
             </cylinder>
           </geometry>
           <material>
@@ -654,7 +654,7 @@
     </model>
 
     <model name='cylinder_3'>
-      <pose>2.0 -2.9 0.5 -0 0 -0</pose>
+      <pose>2.0 -2.9 0.25 -0 0 -0</pose>
       <link name='cylinder_link'>
         <inertial>
           <inertia>
@@ -672,7 +672,7 @@
           <geometry>
             <cylinder>
               <radius>0.2</radius>
-              <length>1</length>
+              <length>0.5</length>
             </cylinder>
           </geometry>
           <surface>
@@ -687,7 +687,7 @@
           <geometry>
             <cylinder>
               <radius>0.2</radius>
-              <length>1</length>
+              <length>0.5</length>
             </cylinder>
           </geometry>
           <material>
@@ -704,7 +704,7 @@
     </model>
 
     <model name='cylinder_4'>
-      <pose>-2.9 0.2 0.5 0 0 0</pose>
+      <pose>-2.9 0.2 0.25 0 0 0</pose>
       <link name='cylinder_link'>
         <inertial>
           <inertia>
@@ -722,7 +722,7 @@
           <geometry>
             <cylinder>
               <radius>0.3</radius>
-              <length>1</length>
+              <length>0.5</length>
             </cylinder>
           </geometry>
           <surface>
@@ -737,7 +737,7 @@
           <geometry>
             <cylinder>
               <radius>0.3</radius>
-              <length>1</length>
+              <length>0.5</length>
             </cylinder>
           </geometry>
           <material>
