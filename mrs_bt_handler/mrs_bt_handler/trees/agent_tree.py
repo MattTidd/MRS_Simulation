@@ -4,9 +4,9 @@ from rclpy.node import Node
 
 # allocation behaviours:
 from mrs_bt_handler.behaviours import (
-    IsSimulationStarted,        # condition for checking if the simulation has started or not
+    SimulationStarted,          # condition for checking if the simulation has started or not
     ActiveGoal,                 # condition for checking if there is an active goal or not
-    ComputeAndPublishBid,       # action for computing and publishing a bid
+    SubmitBid,                  # action for computing and publishing a bid
     AllBidsReceived,            # condition for checking to see if all of the bids have arrived
     RemainIdle,                 # action for remaining idle when not selected
     CheckForWin,                # condition for checking to see if a given agent has won the auction
@@ -27,13 +27,13 @@ def create_tree(node : Node, model_path: str = "") -> py_trees.trees.BehaviourTr
     
     """
     # instantiate the condition nodes:
-    is_sim_started = IsSimulationStarted(node)
+    sim_started = SimulationStarted(node)
     active_goal    = ActiveGoal(node)
     wait_for_bids  = AllBidsReceived(node)
     check_for_win  = CheckForWin(node)
 
     # instantiate the action nodes:
-    compute_bid      = ComputeAndPublishBid(node, model_path)
+    submit_bid      = SubmitBid(node, model_path)
     remain_idle      = RemainIdle(node)
     navigate_to_goal = NavigateToGoal(node)
     recall_auction   = RecallAuction(node)
@@ -41,7 +41,7 @@ def create_tree(node : Node, model_path: str = "") -> py_trees.trees.BehaviourTr
     # main execution tree:
     execution_tree = py_trees.composites.Selector(
         name = "ExecutionTree",
-        memory = True, 
+        memory = False, 
         children = [
             navigate_to_goal,
             recall_auction
@@ -73,9 +73,9 @@ def create_tree(node : Node, model_path: str = "") -> py_trees.trees.BehaviourTr
         name = "Root",
         memory = False,
         children = [
-            is_sim_started, 
+            sim_started, 
             active_goal, 
-            compute_bid, 
+            submit_bid, 
             wait_for_bids, 
             nav_tree
         ]
