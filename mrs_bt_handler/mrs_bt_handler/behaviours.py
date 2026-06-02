@@ -4,6 +4,55 @@ import py_trees
 import os
 import time
 from rclpy.node import Node
+from pickle import load
+
+import torch                # type:ignore
+import torch.nn as nn       # type:ignore
+import torch.optim as optim # type:ignore
+
+# define class for the model to be loaded:
+class RegressionNet(nn.Module):
+    # constructor for the class:
+    def __init__(self, input_size   : int = 3,
+                       hidden_size  : int = 128,
+                       n_layers     : int = 2, 
+                       dropout_rate : float = 0.2):
+        # inherit from the parent:
+        super().__init__()
+
+        # append to the class:
+        self.input_size     = input_size
+        self.hidden_size    = hidden_size
+        self.n_layers       = n_layers
+        self.dropout_rate   = dropout_rate
+        
+        # list for holding layers of the network:
+        layers = []
+
+        # for every desired layer:
+        for i in range(self.n_layers):
+            # set input size to be self.input on first pass through loop, else set to hidden_size:
+            in_size = self.input_size if i == 0 else self.hidden_size
+
+            # add a block of the network:
+            layers += [
+                nn.Linear(in_size, self.hidden_size),
+                nn.BatchNorm1d(self.hidden_size),
+                nn.ReLU(),
+                nn.Dropout(self.dropout_rate)
+            ]
+
+        # unpack layers to a sequential container:
+        self.hidden_layers = nn.Sequential(*layers)
+
+        # add an output layer:
+        self.output_layer = nn.Linear(self.hidden_size, 1)
+
+    # define the forward pass function for the network:
+    def forward(self, x):
+        # pass input through the hidden layers:
+        x = self.hidden_layers(x)
+        return self.output_layer(x)
 
 # define the condition node for checking if the simulation has started yet:
 class IsSimulationStarted(py_trees.behaviour.Behaviour):
@@ -133,8 +182,8 @@ class ComputeAndPublishBid(py_trees.behaviour.Behaviour):
         # add to class:
         self.node           = node
         self.model          = None
-        self.model_path     = os.path.join(model_path, "ann_model.h5")
-        self.scaler_path    = os.path.join(model_path, "ann_scaler.pkl")
+        self.model_path     = os.path.join(model_path, "model.pth")
+        self.scaler_path    = os.path.join(model_path, "scaler.pkl")
         self.bid_published  = False
         self.last_goal      = None
 
@@ -148,14 +197,16 @@ class ComputeAndPublishBid(py_trees.behaviour.Behaviour):
         """
         # try to load up the model used for suitability calculations:
         try:
-            # load packages that will be needed:
-            from keras.models import load_model
-            import tensorflow as tf
-            from keras.losses import MeanSquaredError
-            from pickle import load
-
+            # define model hyperparameters:
+            input_size   = 3
+            n_layers     = 3
+            hidden_size  = 128
+            dropout_rate = 0.2
+            self.device  = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        
             # load model based on the path provided:
-            self.model = load_model(self.model_path, custom_objects = {'mse' : MeanSquaredError()})
+            self.model = RegressionNet(input_size = input_size, hidden_size = hidden_size, n_layers = n_layers, dropout_rate = dropout_rate).to(self.device)
+            self.model.load_state_dict(torch.load(self.model_path, map_location = self.device))
             self.node.get_logger().info(f"Suitability model loaded from {self.model_path}")
 
             # load the scaler:
@@ -216,13 +267,19 @@ class ComputeAndPublishBid(py_trees.behaviour.Behaviour):
         d_goal = np.sqrt((gx - x) ** 2 + (gy - y) ** 2)
 
         # form an input vector:
-        input = np.array([[self.node.load_history, d_goal, self.node.total_distance]])
+        input = np.array([[self.node.load_history, d_goal, self.node.total_distance]], dtype = np.float32)
 
         # scale the input vector:
         scaled_input = self.scaler.transform(input)
 
         # run inference on the input vector:
-        suitability = float(self.model.predict(scaled_input, verbose = 0))
+        self.model.eval()
+        with torch.no_grad():
+            x_tensor    = torch.tensor(scaled_input, dtype = torch.float32).to(self.device)
+            suitability = float(self.model(x_tensor).squeeze().cpu().numpy())
+            # DEBUG:
+            self.node.get_logger().info(f"suitability is: {suitability} with type: {type(suitability)}")
+
         self.node.get_logger().info(f"{self.node.agent_name} suitability: {suitability:.4f} | TDT: {round(self.node.total_distance, 3)} | LH: {self.node.load_history} | DTT: {round(d_goal, 3)}")
 
         # publish the bid:
