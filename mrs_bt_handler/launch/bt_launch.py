@@ -39,6 +39,13 @@ def generate_launch_description():
         description   = "Initial y position of the agent."
     )
 
+    agent_initial_yaw = LaunchConfiguration("agent_initial_yaw")
+    agent_initial_yaw_arg = DeclareLaunchArgument(
+        "agent_initial_yaw",
+        default_value = "0.0",
+        description = "Initial yaw position of the agent."
+    )
+
     num_agents = LaunchConfiguration("num_agents")
     num_agents_arg = DeclareLaunchArgument(
         "num_agents",
@@ -64,6 +71,7 @@ def generate_launch_description():
             "agent_type"      : agent_type, 
             "agent_initial_x" : agent_initial_x,
             "agent_initial_y" : agent_initial_y,
+            "agent_initial_yaw" : agent_initial_yaw,
             "model_name"      : drl_model,
             "num_agents"      : num_agents,
             "model_path"      : model_path
@@ -76,6 +84,7 @@ def generate_launch_description():
         agent_type_arg, 
         agent_initial_x_arg,
         agent_initial_y_arg,
+        agent_initial_yaw_arg,
         num_agents_arg, 
         drl_model_arg,
 
