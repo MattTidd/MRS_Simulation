@@ -500,16 +500,25 @@ class NavigateToGoal(py_trees.behaviour.Behaviour):
         # DEBUG:
         # self.node.get_logger().info(f"currently running {self.__class__.__name__}")
         
-        # global goal position:
+        # goal position -> IN THE GLOBAL FRAME:
         gx = self.node.goal.pose.position.x
         gy = self.node.goal.pose.position.y
 
-        # global agent position:
-        x = self.node.agent_initial_x + self.node.latest_odom.pose.pose.position.x
-        y = self.node.agent_initial_y + self.node.latest_odom.pose.pose.position.y
+        # get raw agent position -> IN THE ODOM FRAME:
+        ox = self.node.latest_odom.pose.pose.position.x
+        oy = self.node.latest_odom.pose.pose.position.y
+
+        # perform a transformation from rotated odom frame -> GLOBAL FRAME:
+        cos_spawn = np.cos(self.node.agent_initial_yaw)
+        sin_spawn = np.sin(self.node.agent_initial_yaw)
+        x = self.node.agent_initial_x + cos_spawn * ox - sin_spawn * oy
+        y = self.node.agent_initial_y + sin_spawn * ox + cos_spawn * oy
 
         # distance to the goal:
         d_goal = np.sqrt((gx - x) ** 2 + (gy - y) ** 2)
+
+        # DEBUG:
+        # self.node.get_logger().info(f"ox: {round(ox,3)} | oy: {round(oy,3)} | x: {round(x,3)} | y: {round(y,3)} | d_goal: {round(d_goal,3)}")
 
         # check d_goal for completion:
         if d_goal <= self.node.goal_tolerance:
@@ -520,6 +529,7 @@ class NavigateToGoal(py_trees.behaviour.Behaviour):
             self.node.goal = None
 
             # return success:
+            self.node.get_logger().info("BT successfully navigated!")
             return py_trees.common.Status.SUCCESS
         
         # otherwise keep running:
