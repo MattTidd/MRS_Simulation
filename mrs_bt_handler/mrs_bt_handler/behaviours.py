@@ -255,16 +255,27 @@ class SubmitBid(py_trees.behaviour.Behaviour):
             self.node.get_logger().info("Waiting for arrival of goal or odometry...")
             return py_trees.common.Status.RUNNING
         
-        # global goal position:
+        # goal position -> IN THE GLOBAL FRAME:
         gx = self.node.goal.pose.position.x
         gy = self.node.goal.pose.position.y
 
-        # global agent position:
-        x = self.node.agent_initial_x + self.node.latest_odom.pose.pose.position.x
-        y = self.node.agent_initial_y + self.node.latest_odom.pose.pose.position.y
+        # grab the raw agent position -> IN THE ODOM FRAME:
+        ox = self.node.latest_odom.pose.pose.position.x
+        oy = self.node.latest_odom.pose.pose.position.y
+
+        # perform a transformation from rotated odom frame -> GLOBAL FRAME:
+        cos_spawn = np.cos(self.node.agent_initial_yaw)
+        sin_spawn = np.sin(self.node.agent_initial_yaw)
+
+        # need to factor in the shifted position of the agent, as odom and global are not on top of one another:
+        x = self.node.agent_initial_x + cos_spawn * ox - sin_spawn * oy
+        y = self.node.agent_initial_y + sin_spawn * ox + cos_spawn * oy
 
         # distance to the goal:
         d_goal = np.sqrt((gx - x) ** 2 + (gy - y) ** 2)
+
+        # DEBUG:
+        # self.node.get_logger().info(f"{self.node.agent_name} | x: {x} | y: {y} | gx: {gx} | gy: {gy} | d_goal: {round(d_goal, 3)}")
 
         # form an input vector:
         input = np.array([[self.node.load_history, d_goal, self.node.total_distance]], dtype = np.float32)
@@ -511,6 +522,8 @@ class NavigateToGoal(py_trees.behaviour.Behaviour):
         # perform a transformation from rotated odom frame -> GLOBAL FRAME:
         cos_spawn = np.cos(self.node.agent_initial_yaw)
         sin_spawn = np.sin(self.node.agent_initial_yaw)
+
+        # need to factor in the shifted position of the agent, as odom and global are not on top of one another:
         x = self.node.agent_initial_x + cos_spawn * ox - sin_spawn * oy
         y = self.node.agent_initial_y + sin_spawn * ox + cos_spawn * oy
 
