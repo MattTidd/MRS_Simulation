@@ -111,12 +111,12 @@ def generate_launch_description():
     )
     
     # define parameters for launching agents:
-    positions           = [["-2.0", "1.0"], ["-2.0", "-1.0"]]
-    agent_names         = ["agent1", "agent2"]
-    agent_types         = ["typeA", "typeB"]
+    positions           = [["-3.0", "-3.0"], ["-3.0", "3.0"], ["3.0", "3.0"], ["3.0", "-3.0"]]
+    agent_names         = ["agent1", "agent2", "agent3", "agent4"]
+    agent_types         = ["typeA", "typeB", "typeA", "typeB"]
     agent_initial_xs    = [str(p[0]) for p in positions]
     agent_initial_ys    = [str(p[1]) for p in positions]
-    agent_initial_yaws  = ["0.0", "0.0"]
+    agent_initial_yaws  = ["0.785398", "-0.785398", "-2.356194", "2.356194"]
     flattened_positions = [float(coord) for p in positions for coord in p]
     flattened_yaws      = [float(y) for y in agent_initial_yaws]
 
