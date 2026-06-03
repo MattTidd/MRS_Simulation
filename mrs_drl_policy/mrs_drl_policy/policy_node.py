@@ -212,7 +212,12 @@ class DRLPolicyNode(Node):
                 # send cmd vel to stop agent:
                 cmd                 =    TwistStamped()
                 cmd.header.stamp    =    self.get_clock().now().to_msg()
-                self.cmd_pub.publish(cmd)
+
+                # try to publish the cmd vel:
+                try:
+                    self.cmd_pub.publish(cmd)
+                except Exception:
+                    pass
 
                 # prepare & return a result message:
                 result_msg.success = False
@@ -225,7 +230,7 @@ class DRLPolicyNode(Node):
                 cmd              = TwistStamped()
                 cmd.header.stamp = self.get_clock().now().to_msg()
 
-                # exception handling:
+                # try to publish the cmd vel:
                 try:
                     self.cmd_pub.publish(cmd)
                 except Exception:
@@ -242,7 +247,12 @@ class DRLPolicyNode(Node):
                 goal_handle.abort()
                 cmd                 =   TwistStamped()
                 cmd.header.stamp    =   self.get_clock().now().to_msg()
-                self.cmd_pub.publish(cmd)
+
+                # try to publish the cmd vel:
+                try:
+                    self.cmd_pub.publish(cmd)
+                except Exception:
+                    pass
 
                 # prepare & return a result message:
                 result_msg.success          =   False
@@ -271,7 +281,14 @@ class DRLPolicyNode(Node):
                 # stop agent via goal handle:
                 cmd                 =    TwistStamped()
                 cmd.header.stamp    =    self.get_clock().now().to_msg()
-                self.cmd_pub.publish(cmd)
+
+                # try to publish the cmd vel:
+                try:
+                    self.cmd_pub.publish(cmd)
+                except Exception:
+                    pass
+
+                # report success on goal handle:
                 goal_handle.succeed()
 
                 # prepare & return a result message:
@@ -286,7 +303,14 @@ class DRLPolicyNode(Node):
                 # stop agent via goal handle:
                 cmd                 =    TwistStamped()
                 cmd.header.stamp    =    self.get_clock().now().to_msg()
-                self.cmd_pub.publish(cmd)
+
+                # try to publish the cmd vel:
+                try:
+                    self.cmd_pub.publish(cmd)
+                except Exception:
+                    pass
+
+                # abort the goal handle:
                 goal_handle.abort()
 
                 # prepare & return a result message:
@@ -309,6 +333,7 @@ class DRLPolicyNode(Node):
             cmd.twist.linear.x          =    float(self.action[0]) * self.max_lin_vel
             cmd.twist.angular.z         =    float(self.action[1]) * self.max_angular_vel
 
+            # try to publish the cmd vel:
             try:
                 self.cmd_pub.publish(cmd)
             except Exception:
