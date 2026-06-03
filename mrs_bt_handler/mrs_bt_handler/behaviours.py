@@ -289,7 +289,6 @@ class SubmitBid(py_trees.behaviour.Behaviour):
 
         # publish the state of the agent:
         self.node.get_logger().info(f"publishing state!")
-        self.node.publish_state()
 
         # return success after publishing a bid:
         return py_trees.common.Status.SUCCESS
