@@ -87,8 +87,10 @@ class BTNode(Node):
         ##### storage for the important states that are used by the node/tree: #####
         self.goal:                  PoseStamped     |   None    =     None      # current pose of goal
         self.latest_odom:           Odometry        |   None    =     None      # latest odometry
+        self.distance_to_goal:      float                       =     0.0       # distance to the current goal
         self.total_distance:        float                       =     0.0       # total distance travelled
         self.load_history:          float                       =     0.0       # load history (number of tasks completed thus far)
+        self.suitability:           float                       =     0.0       # suitability for the task at hand
         self.all_bids:              dict                        =     {}        # dictionary of form {agent_name : suitability_score}
         self.simulation_started:    bool                        =     False     # flag for whether the simulation has started or not
         self.new_goal:              bool                        =     False     # flag for whether a new goal has arrived or not
@@ -358,6 +360,9 @@ class BTNode(Node):
 
         # if there is a policy process active:
         if self.policy_process and self.policy_process.poll() is None:
+            # buffer for letting the current control loop iteration to finish:
+            time.sleep(0.1)
+
             # send a SIGTERM to the node:
             os.killpg(os.getpgid(self.policy_process.pid), signal.SIGTERM)
 
