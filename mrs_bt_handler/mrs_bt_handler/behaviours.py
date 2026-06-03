@@ -281,14 +281,11 @@ class SubmitBid(py_trees.behaviour.Behaviour):
             x_tensor    = torch.tensor(scaled_input, dtype = torch.float32).to(self.device)
             self.node.suitability = float(self.model(x_tensor).squeeze().cpu().numpy())
 
-        # self.node.get_logger().info(f"{self.node.agent_name} suitability: {suitability:.4f} | TDT: {round(self.node.total_distance, 3)} | LH: {self.node.load_history} | DTT: {round(d_goal, 3)}")
+        self.node.get_logger().info(f"{self.node.agent_name} suitability: {self.node.suitability:.4f} | TDT: {round(self.node.total_distance, 3)} | LH: {self.node.load_history} | DTT: {round(d_goal, 3)}")
 
         # publish the bid:
         self.node.publish_bid(self.node.suitability)
         self.bid_published = True
-
-        # publish the state of the agent:
-        self.node.get_logger().info(f"publishing state!")
 
         # return success after publishing a bid:
         return py_trees.common.Status.SUCCESS
@@ -335,7 +332,7 @@ class AllBidsReceived(py_trees.behaviour.Behaviour):
             return py_trees.common.Status.SUCCESS
         
         # otherwise log that you are waiting and return failure:
-        self.node.get_logger().info(f"Waiting for bids: {n_bids}/{self.node.num_agents}")
+        self.node.get_logger().info(f"Waiting for bids: {n_bids + 1}/{self.node.num_agents}")
         return py_trees.common.Status.FAILURE
     
 # define an action for simply remaining idle:
@@ -465,7 +462,7 @@ class NavigateToGoal(py_trees.behaviour.Behaviour):
             self.node.spin_up_policy()
 
             # print to user:
-            self.node.get_logger().info(f"{self.node.agent_name} navigating to goal")
+            self.node.get_logger().info(f"{self.node.agent_name.capitalize()} has won the auction!")
 
     # define update method for class:
     def update(self):
@@ -507,9 +504,6 @@ class NavigateToGoal(py_trees.behaviour.Behaviour):
         # distance to the goal:
         d_goal = np.sqrt((gx - x) ** 2 + (gy - y) ** 2)
 
-        # DEBUG:
-        # self.node.get_logger().info(f"ox: {round(ox,3)} | oy: {round(oy,3)} | x: {round(x,3)} | y: {round(y,3)} | d_goal: {round(d_goal,3)}")
-
         # check d_goal for completion:
         if d_goal <= self.node.goal_tolerance:
             # increment load history:
@@ -519,7 +513,6 @@ class NavigateToGoal(py_trees.behaviour.Behaviour):
             self.node.goal = None
 
             # return success:
-            self.node.get_logger().info("BT successfully navigated!")
             return py_trees.common.Status.SUCCESS
         
         # otherwise keep running:

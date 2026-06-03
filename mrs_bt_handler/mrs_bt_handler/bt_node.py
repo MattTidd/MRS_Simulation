@@ -170,7 +170,7 @@ class BTNode(Node):
         """
         # handle goal clearance signal:
         if msg.required_capability == "":
-            self.get_logger().info("Goal cleared by winner")
+            # self.get_logger().info("Goal cleared by winner")
             self.goal     = None
             self.all_bids = {}
             self.new_goal = False
@@ -313,7 +313,7 @@ class BTNode(Node):
         # create dummy goal message:
         msg = Goal()
         self.goal_pub.publish(msg)
-        self.get_logger().info(f"{self.agent_name} broadcasting goal completion")
+        self.get_logger().info(f"{self.agent_name.capitalize()} broadcasting goal completion\n\n")
 
     # define method for spinning the navigation policy and goal nodes up:
     def spin_up_policy(self):
@@ -375,7 +375,8 @@ class BTNode(Node):
             # print to user:
             self.get_logger().info("Policy process killed.")
         else:
-            self.get_logger().warn("kill_policy method called but no active process found.")
+            pass
+            # self.get_logger().warn("kill_policy method called but no active process found.")
 
 # define the main function:
 def main():

@@ -295,7 +295,7 @@ class DRLPolicyNode(Node):
                 result_msg.success          =   True
                 result_msg.message          =   'Goal reached.'
                 result_msg.total_distance   =   float(total_distance)
-                self.get_logger().info('Goal reached.')
+                # self.get_logger().info('Goal reached.')
                 return result_msg
             
             # if the agent "hits" an obstacle:

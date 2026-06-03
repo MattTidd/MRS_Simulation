@@ -434,7 +434,7 @@ class MainWindow(QWidget):
 
         # 2 - IF THERE IS ANY GOAL IN THE QUEUE:
         if self.goal_queue:
-            self.node.get_logger().info("Goal detected in queue, publishing!")
+            self.node.get_logger().info("Goal detected in queue, publishing!\n\n")
             self._publish_next_goal()
         else:
             self.node.get_logger().info("No goals provided for the current mission!")
@@ -457,7 +457,7 @@ class MainWindow(QWidget):
         # if it is not the first goal:
         if self.goal_number != 0:
             # display to user:
-            self.node.get_logger().info("Goal complete!")
+            # self.node.get_logger().info("Goal complete!")
 
             # delete the previous goal:
             self._kill_namespaced_node(namespace = "goal", node = "robot_state_pub")
