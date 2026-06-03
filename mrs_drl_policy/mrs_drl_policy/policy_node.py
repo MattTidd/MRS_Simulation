@@ -168,6 +168,16 @@ class DRLPolicyNode(Node):
 
     # define the main execution callback:
     async def execute_callback(self, goal_handle : ServerGoalHandle):
+        # set control frequency and period:
+        ctrl_freq       =    50
+        ctrl_period     =    1.0 / ctrl_freq
+
+        # wait for data to come in:
+        while (self.latest_odom is None) or (self.latest_scan is None):
+            self.get_logger().warn('Waiting for odometry and LiDAR...')
+            time.sleep(ctrl_period)
+            continue
+
         # get the goal handle:
         self._current_goal_handle = goal_handle
 
@@ -193,10 +203,6 @@ class DRLPolicyNode(Node):
         x_prev          =    self.latest_odom.pose.pose.position.x
         y_prev          =    self.latest_odom.pose.pose.position.y
         total_distance  =    0.0
-
-        # set control frequency and period:
-        ctrl_freq       =    50
-        ctrl_period     =    1.0 / ctrl_freq
 
         # while spinning:
         while rclpy.ok():
@@ -260,12 +266,6 @@ class DRLPolicyNode(Node):
                 result_msg.total_distance   =   float(total_distance)
                 self.get_logger().warn(f"Goal timed out after {elapsed_time:.1f}s")
                 return result_msg
-            
-            # wait for data to come in:
-            if (self.latest_odom is None) or (self.latest_scan is None):
-                self.get_logger().warn('Waiting for odometry and LiDAR...')
-                time.sleep(ctrl_period)
-                continue
 
             ##### MAIN DRL LOOP #####
             # 1) extract and normalize observation:
