@@ -93,9 +93,6 @@ class SimulationStarted(py_trees.behaviour.Behaviour):
         if self.node.simulation_started:
             return py_trees.common.Status.SUCCESS
         
-        # DEBUG:
-        # self.node.get_logger().info(f"currently running {self.__class__.__name__}")
-        
         # else return failure:
         return py_trees.common.Status.FAILURE
     
@@ -137,10 +134,7 @@ class ActiveGoal(py_trees.behaviour.Behaviour):
         # if the node has a PoseStamped message for the goal (i.e. not None type), return success:
         if self.node.goal is not None:
             return py_trees.common.Status.SUCCESS
-        
-        # DEBUG:
-        # self.node.get_logger().info(f"currently running {self.__class__.__name__}")
-        
+
         # else return failure:
         return py_trees.common.Status.FAILURE
     
@@ -273,9 +267,7 @@ class SubmitBid(py_trees.behaviour.Behaviour):
 
         # distance to the goal:
         d_goal = np.sqrt((gx - x) ** 2 + (gy - y) ** 2)
-
-        # DEBUG:
-        # self.node.get_logger().info(f"{self.node.agent_name} | x: {x} | y: {y} | gx: {gx} | gy: {gy} | d_goal: {round(d_goal, 3)}")
+        self.node.distance_to_goal = d_goal
 
         # form an input vector:
         input = np.array([[self.node.load_history, d_goal, self.node.total_distance]], dtype = np.float32)
@@ -287,18 +279,17 @@ class SubmitBid(py_trees.behaviour.Behaviour):
         self.model.eval()
         with torch.no_grad():
             x_tensor    = torch.tensor(scaled_input, dtype = torch.float32).to(self.device)
-            suitability = float(self.model(x_tensor).squeeze().cpu().numpy())
-            # DEBUG:
-            self.node.get_logger().info(f"suitability is: {suitability} with type: {type(suitability)}")
+            self.node.suitability = float(self.model(x_tensor).squeeze().cpu().numpy())
 
-        self.node.get_logger().info(f"{self.node.agent_name} suitability: {suitability:.4f} | TDT: {round(self.node.total_distance, 3)} | LH: {self.node.load_history} | DTT: {round(d_goal, 3)}")
+        # self.node.get_logger().info(f"{self.node.agent_name} suitability: {suitability:.4f} | TDT: {round(self.node.total_distance, 3)} | LH: {self.node.load_history} | DTT: {round(d_goal, 3)}")
 
         # publish the bid:
-        self.node.publish_bid(suitability)
+        self.node.publish_bid(self.node.suitability)
         self.bid_published = True
 
-        # DEBUG:
-        # self.node.get_logger().info(f"currently running {self.__class__.__name__}")
+        # publish the state of the agent:
+        self.node.get_logger().info(f"publishing state!")
+        self.node.publish_state()
 
         # return success after publishing a bid:
         return py_trees.common.Status.SUCCESS
@@ -344,9 +335,6 @@ class AllBidsReceived(py_trees.behaviour.Behaviour):
         if n_bids == self.node.num_agents:
             return py_trees.common.Status.SUCCESS
         
-        # DEBUG:
-        # self.node.get_logger().info(f"currently running {self.__class__.__name__}")
-        
         # otherwise log that you are waiting and return failure:
         self.node.get_logger().info(f"Waiting for bids: {n_bids}/{self.node.num_agents}")
         return py_trees.common.Status.FAILURE
@@ -381,11 +369,6 @@ class RemainIdle(py_trees.behaviour.Behaviour):
         :returns: ``py_trees.common.Status.SUCCESS`` while agent idles.
         
         """
-        # log status:
-        # self.node.get_logger().info(f"{self.node.agent_name} lost bid, idling...")
-
-        # DEBUG:
-        # self.node.get_logger().info(f"currently running {self.__class__.__name__}")
 
         # return success:
         return py_trees.common.Status.SUCCESS
@@ -423,11 +406,9 @@ class CheckForWin(py_trees.behaviour.Behaviour):
         """
         # if the agent wins the bid:
         if self.node.is_winner():
-            # self.node.get_logger().info(f"{self.node.agent_name} won the bid.")
             return py_trees.common.Status.SUCCESS
         
         # otherwise:
-        # self.node.get_logger().info(f"{self.node.agent_name} did not win the bid.")
         return py_trees.common.Status.FAILURE
 
 # define an action for navigating to the goal:
@@ -500,16 +481,13 @@ class NavigateToGoal(py_trees.behaviour.Behaviour):
         """
         # if there is either no goal or no odometry coming in:
         if self.node.latest_odom is None or self.node.goal is None:
-            self.node.get_logger().info("no odom or latest goal")
+            self.node.get_logger().info("No odom or latest goal")
             return py_trees.common.Status.RUNNING
         
         # check for a timeout:
         if self._start_time is not None and (time.time() - self._start_time) > self.timeout:
             self.node.get_logger().warn(f"{self.node.agent_name} navigation timed out.")
             return py_trees.common.Status.FAILURE
-        
-        # DEBUG:
-        # self.node.get_logger().info(f"currently running {self.__class__.__name__}")
         
         # goal position -> IN THE GLOBAL FRAME:
         gx = self.node.goal.pose.position.x
