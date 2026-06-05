@@ -1,0 +1,535 @@
+<sdf version='1.9'>
+  <world name='world_3'>
+    <!-- preamble -->
+    <physics name='1ms' type='ignored'>
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1</real_time_factor>
+      <real_time_update_rate>1000</real_time_update_rate>
+    </physics>
+    <plugin name='gz::sim::systems::Physics' filename='ignition-gazebo-physics-system'/>
+    <plugin name='gz::sim::systems::UserCommands' filename='ignition-gazebo-user-commands-system'/>
+    <plugin name='gz::sim::systems::SceneBroadcaster' filename='ignition-gazebo-scene-broadcaster-system'/>
+    <plugin name='gz::sim::systems::Contact' filename='ignition-gazebo-contact-system'/>
+    <plugin name = "ignition::gazebo::systems::Sensors" filename = "ignition-gazebo-sensors-system"/>
+    <gravity>0 0 -9.8</gravity>
+    <magnetic_field>6e-06 2.3e-05 -4.2e-05</magnetic_field>
+    <atmosphere type='adiabatic'/>
+    <scene>
+      <ambient>0.4 0.4 0.4 1</ambient>
+      <background>0.7 0.7 0.7 1</background>
+      <shadows>true</shadows>
+    </scene>
+
+    <light name='sun' type='directional'>
+      <pose>0 0 10 0 -0 0</pose>
+      <cast_shadows>false</cast_shadows>
+      <intensity>1</intensity>
+      <direction>-0.5 0.1 -0.9</direction>
+      <diffuse>0.8 0.8 0.8 1</diffuse>
+      <specular>0.2 0.2 0.2 1</specular>
+      <attenuation>
+        <range>1000</range>
+        <linear>0.01</linear>
+        <constant>0.90000000000000002</constant>
+        <quadratic>0.001</quadratic>
+      </attenuation>
+      <spot>
+        <inner_angle>0</inner_angle>
+        <outer_angle>0</outer_angle>
+        <falloff>0</falloff>
+      </spot>
+    </light>
+
+    <!-- ground plane -->
+    <model name='ground_plane'>
+      <static>true</static>
+      <link name='link'>
+        <collision name='collision'>
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>100 100</size>
+            </plane>
+          </geometry>
+          <surface>
+            <friction>
+              <ode/>
+            </friction>
+            <bounce/>
+            <contact/>
+          </surface>
+        </collision>
+        <visual name='visual'>
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>20 20</size>
+            </plane>
+          </geometry>
+          <material>
+            <ambient>0.8 0.8 0.8 1</ambient>
+            <diffuse>0.8 0.8 0.8 1</diffuse>
+            <specular>0.8 0.8 0.8 1</specular>
+          </material>
+        </visual>
+        <pose>0 0 0 0 -0 0</pose>
+        <inertial>
+          <pose>0 0 0 0 -0 0</pose>
+          <mass>1</mass>
+          <inertia>
+            <ixx>1</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>1</iyy>
+            <iyz>0</iyz>
+            <izz>1</izz>
+          </inertia>
+        </inertial>
+        <enable_wind>false</enable_wind>
+      </link>
+      <pose>0 0 0 0 -0 0</pose>
+      <self_collide>false</self_collide>
+    </model>
+
+    <!-- walls -->
+    <model name='wall_north'>
+      <pose>10.025 0 0.25 -0 0 -0</pose>
+      <link name='wall_north_link'>
+          <inertial>
+              <inertia>
+                  <ixx>0.16666</ixx>
+                  <ixy>0</ixy>
+                  <ixz>0</ixz>
+                  <iyy>0.16666</iyy>
+                  <iyz>0</iyz>
+                  <izz>0.16666</izz>
+              </inertia>
+              <mass>1</mass>
+              <pose>0 0 0 0 -0 0</pose>
+          </inertial>
+          <collision name='wall_north_collision'>
+              <geometry>
+                  <box>
+                  <size>0.05 20.1 0.5</size>
+                  </box>
+              </geometry>
+              <surface>
+                  <friction>
+                  <ode/>
+                  </friction>
+                  <bounce/>
+                  <contact/>
+              </surface>
+          </collision>
+          <visual name='wall_north_visual'>
+              <geometry>
+                  <box>
+                  <size>0.05 20.1 0.5</size>
+                  </box>
+              </geometry>
+              <material>
+                  <ambient>0.2 0.2 0.2 1</ambient>
+                  <diffuse>0.2 0.2 0.2 1</diffuse>
+                  <specular>1 1 1 1</specular>
+              </material>
+          </visual>
+          <pose>0 0 0 0 -0 0</pose>
+          <enable_wind>false</enable_wind>
+      </link>
+      <static>true</static>
+      <self_collide>false</self_collide>
+    </model>
+
+    <model name='wall_south'>
+      <pose>-10.025 0 0.25 -0 0 -0</pose>
+      <link name='wall_south_link'>
+          <inertial>
+              <inertia>
+                  <ixx>0.16666</ixx>
+                  <ixy>0</ixy>
+                  <ixz>0</ixz>
+                  <iyy>0.16666</iyy>
+                  <iyz>0</iyz>
+                  <izz>0.16666</izz>
+              </inertia>
+              <mass>1</mass>
+              <pose>0 0 0 0 -0 0</pose>
+          </inertial>
+          <collision name='wall_south_collision'>
+              <geometry>
+                  <box>
+                  <size>0.05 20.1 0.5</size>
+                  </box>
+              </geometry>
+              <surface>
+                  <friction>
+                  <ode/>
+                  </friction>
+                  <bounce/>
+                  <contact/>
+              </surface>
+          </collision>
+          <visual name='wall_south_visual'>
+              <geometry>
+                  <box>
+                  <size>0.05 20.1 0.5</size>
+                  </box>
+              </geometry>
+              <material>
+                  <ambient>0.2 0.2 0.2 1</ambient>
+                  <diffuse>0.2 0.2 0.2 1</diffuse>
+                  <specular>1 1 1 1</specular>
+              </material>
+          </visual>
+          <pose>0 0 0 0 -0 0</pose>
+          <enable_wind>false</enable_wind>
+      </link>
+      <static>true</static>
+      <self_collide>false</self_collide>
+    </model>
+
+    <model name='wall_east'>
+      <pose>-0 -10.025 0.25 -0 0 -0</pose>
+      <link name='wall_east_link'>
+          <inertial>
+              <inertia>
+                  <ixx>0.16666</ixx>
+                  <ixy>0</ixy>
+                  <ixz>0</ixz>
+                  <iyy>0.16666</iyy>
+                  <iyz>0</iyz>
+                  <izz>0.16666</izz>
+              </inertia>
+              <mass>1</mass>
+              <pose>0 0 0 0 -0 0</pose>
+          </inertial>
+          <collision name='wall_east_collision'>
+              <geometry>
+                  <box>
+                  <size>20 0.05 0.5</size>
+                  </box>
+              </geometry>
+              <surface>
+                  <friction>
+                  <ode/>
+                  </friction>
+                  <bounce/>
+                  <contact/>
+              </surface>
+          </collision>
+          <visual name='wall_east_visual'>
+              <geometry>
+                  <box>
+                  <size>20 0.05 0.5</size>
+                  </box>
+              </geometry>
+              <material>
+                  <ambient>0.2 0.2 0.2 1</ambient>
+                  <diffuse>0.2 0.2 0.2 1</diffuse>
+                  <specular>1 1 1 1</specular>
+              </material>
+          </visual>
+          <pose>0 0 0 0 -0 0</pose>
+          <enable_wind>false</enable_wind>
+      </link>
+      <static>true</static>
+      <self_collide>false</self_collide>
+    </model>
+
+    <model name='wall_west'>
+      <pose>-0 10.025 0.25 -0 0 -0</pose>
+      <link name='wall_west_link'>
+          <inertial>
+              <inertia>
+                  <ixx>0.16666</ixx>
+                  <ixy>0</ixy>
+                  <ixz>0</ixz>
+                  <iyy>0.16666</iyy>
+                  <iyz>0</iyz>
+                  <izz>0.16666</izz>
+              </inertia>
+              <mass>1</mass>
+              <pose>0 0 0 0 -0 0</pose>
+          </inertial>
+          <collision name='wall_west_collision'>
+              <geometry>
+                  <box>
+                  <size>20 0.05 0.5</size>
+                  </box>
+              </geometry>
+              <surface>
+                  <friction>
+                  <ode/>
+                  </friction>
+                  <bounce/>
+                  <contact/>
+              </surface>
+          </collision>
+          <visual name='wall_west_visual'>
+              <geometry>
+                  <box>
+                  <size>20 0.05 0.5</size>
+                  </box>
+              </geometry>
+              <material>
+                  <ambient>0.2 0.2 0.2 1</ambient>
+                  <diffuse>0.2 0.2 0.2 1</diffuse>
+                  <specular>1 1 1 1</specular>
+              </material>
+          </visual>
+          <pose>0 0 0 0 -0 0</pose>
+          <enable_wind>false</enable_wind>
+      </link>
+      <static>true</static>
+      <self_collide>false</self_collide>
+    </model>
+
+    <!-- URIs -->
+    <include>
+      <uri>file:///home/matt/personal_research/src/mrs_robot_launcher/worlds/models/aws_robomaker_warehouse_ShelfF_01</uri>
+      <name>aws_robomaker_warehouse_ShelfF_01</name>
+      <pose>8 0 0 0 -0 0</pose>
+    </include>
+
+    <include>
+      <uri>file:///home/matt/personal_research/src/mrs_robot_launcher/worlds/models/aws_robomaker_warehouse_ShelfF_01</uri>
+      <name>aws_robomaker_warehouse_ShelfF_01_0</name>
+      <pose>4 0 0 0 -0 0</pose>
+    </include>
+
+    <include>
+      <uri>file:///home/matt/personal_research/src/mrs_robot_launcher/worlds/models/aws_robomaker_warehouse_ShelfE_01</uri>
+      <name>aws_robomaker_warehouse_ShelfE_01</name>
+      <pose>-2 -8.5 0 0 -0 0</pose>
+    </include>
+
+    <include>
+      <uri>file:///home/matt/personal_research/src/mrs_robot_launcher/worlds/models/aws_robomaker_warehouse_ShelfE_01</uri>
+      <name>aws_robomaker_warehouse_ShelfE_01_0</name>
+      <pose>-7 -8.5 0 0 -0 0</pose>
+    </include>
+
+    <include>
+      <uri>file:///home/matt/personal_research/src/mrs_robot_launcher/worlds/models/aws_robomaker_warehouse_ShelfE_01</uri>
+      <name>aws_robomaker_warehouse_ShelfE_01_1</name>
+      <pose>-2 -6.5 0 0 -0 0</pose>
+    </include>
+
+    <include>
+      <uri>file:///home/matt/personal_research/src/mrs_robot_launcher/worlds/models/aws_robomaker_warehouse_ShelfE_01</uri>
+      <name>aws_robomaker_warehouse_ShelfE_01_2</name>
+      <pose>-7 -6.5 0 0 -0 0</pose>
+    </include>
+
+    <include>
+      <uri>file:///home/matt/personal_research/src/mrs_robot_launcher/worlds/models/warehouse_PalletBoxes</uri>
+      <name>warehouse_PalletBoxes</name>
+      <pose>3.75 0.5 0.01 0 -0 0.1</pose>
+    </include>
+
+    <include>
+      <uri>file:///home/matt/personal_research/src/mrs_robot_launcher/worlds/models/warehouse_PalletBoxes</uri>
+      <name>warehouse_PalletBoxes_0</name>
+      <pose>3.75 1.5 0.01 0 -0 -3.14</pose>
+    </include>
+
+    <include>
+      <uri>file:///home/matt/personal_research/src/mrs_robot_launcher/worlds/models/warehouse_PalletBoxes</uri>
+      <name>warehouse_PalletBoxes_1</name>
+      <pose>3.5 6.5 0.01 0 -0 -0.05</pose>
+    </include>
+
+    <include>
+      <uri>file:///home/matt/personal_research/src/mrs_robot_launcher/worlds/models/warehouse_PalletBoxes</uri>
+      <name>warehouse_PalletBoxes_2</name>
+      <pose>7.5 8.25 0.01 0 -0 -0.05</pose>
+    </include>
+
+    <include>
+      <uri>file:///home/matt/personal_research/src/mrs_robot_launcher/worlds/models/warehouse_PalletBoxes</uri>
+      <name>warehouse_PalletBoxes_3</name>
+      <pose>7.5 7 0.01 0 -0 0.125</pose>
+    </include>
+
+    <include>
+      <uri>file:///home/matt/personal_research/src/mrs_robot_launcher/worlds/models/warehouse_PalletBoxes</uri>
+      <name>warehouse_PalletBoxes_4</name>
+      <pose>7.5 5 0.01 0 -0 -0.075</pose>
+    </include>
+
+    <include>
+      <uri>file:///home/matt/personal_research/src/mrs_robot_launcher/worlds/models/warehouse_PalletBoxes</uri>
+      <name>warehouse_PalletBoxes_5</name>
+      <pose>7.5 3.75 0.01 0 -0 3.09</pose>
+    </include>
+
+    <include>
+      <uri>file:///home/matt/personal_research/src/mrs_robot_launcher/worlds/models/warehouse_PalletBoxes</uri>
+      <name>warehouse_PalletBoxes_6</name>
+      <pose>7.5 2.75 0.01 0 -0 3.19</pose>
+    </include>
+
+    <include>
+      <uri>file:///home/matt/personal_research/src/mrs_robot_launcher/worlds/models/warehouse_PalletBoxes</uri>
+      <name>warehouse_PalletBoxes_7</name>
+      <pose>7.5 1.5 0.01 0 -0 0.1</pose>
+    </include>
+
+    <include>
+      <uri>file:///home/matt/personal_research/src/mrs_robot_launcher/worlds/models/warehouse_PalletBoxes</uri>
+      <name>warehouse_PalletBoxes_8</name>
+      <pose>7.5 -3.75 0.01 0 -0 0</pose>
+    </include>
+
+    <include>
+      <uri>file:///home/matt/personal_research/src/mrs_robot_launcher/worlds/models/warehouse_PalletBoxes</uri>
+      <name>warehouse_PalletBoxes_9</name>
+      <pose>7.5 -5.5 0.01 0 -0 0</pose>
+    </include>
+
+    <include>
+      <uri>file:///home/matt/personal_research/src/mrs_robot_launcher/worlds/models/warehouse_PalletBoxes</uri>
+      <name>warehouse_PalletBoxes_10</name>
+      <pose>7.5 -6.5 0.01 0 -0 3.14</pose>
+    </include>
+
+    <include>
+      <uri>file:///home/matt/personal_research/src/mrs_robot_launcher/worlds/models/warehouse_PalletBoxes</uri>
+      <name>warehouse_PalletBoxes_11</name>
+      <pose>7.5 -7.75 0.01 0 -0 0</pose>
+    </include>
+
+    <include>
+      <uri>file:///home/matt/personal_research/src/mrs_robot_launcher/worlds/models/warehouse_PalletBoxes</uri>
+      <name>warehouse_PalletBoxes_12</name>
+      <pose>3.75 -8.25 0.01 0 -0 0</pose>
+    </include>
+
+    <include>
+      <uri>file:///home/matt/personal_research/src/mrs_robot_launcher/worlds/models/aws_robomaker_warehouse_ClutteringA_01</uri>
+      <name>aws_robomaker_warehouse_ClutteringA_01</name>
+      <pose>4 -5.75 0 0 -0 0</pose>
+    </include>
+
+    <include>
+      <uri>file:///home/matt/personal_research/src/mrs_robot_launcher/worlds/models/aws_robomaker_warehouse_ClutteringA_01</uri>
+      <name>aws_robomaker_warehouse_ClutteringA_01_0</name>
+      <pose>8 -1.25 0 0 -0 0</pose>
+    </include>
+
+    <include>
+      <uri>file:///home/matt/personal_research/src/mrs_robot_launcher/worlds/models/aws_robomaker_warehouse_Bucket_01</uri>
+      <name>aws_robomaker_warehouse_Bucket_01</name>
+      <pose>8.6 8 0 0 -0 0</pose>
+    </include>
+
+    <include>
+      <uri>file:///home/matt/personal_research/src/mrs_robot_launcher/worlds/models/aws_robomaker_warehouse_Bucket_01</uri>
+      <name>aws_robomaker_warehouse_Bucket_01_0</name>
+      <pose>8.6 6 0 0 -0 0</pose>
+    </include>
+
+    <include>
+      <uri>file:///home/matt/personal_research/src/mrs_robot_launcher/worlds/models/aws_robomaker_warehouse_Bucket_01</uri>
+      <name>aws_robomaker_warehouse_Bucket_01_1</name>
+      <pose>4 -1 0 0 -0 0</pose>
+    </include>
+
+    <include>
+      <uri>file:///home/matt/personal_research/src/mrs_robot_launcher/worlds/models/aws_robomaker_warehouse_Bucket_01</uri>
+      <name>aws_robomaker_warehouse_Bucket_01_2</name>
+      <pose>8.6 1 0 0 -0 0</pose>
+    </include>
+
+    <include>
+      <uri>file:///home/matt/personal_research/src/mrs_robot_launcher/worlds/models/aws_robomaker_warehouse_Bucket_01</uri>
+      <name>aws_robomaker_warehouse_Bucket_01_3</name>
+      <pose>8.6 2.5 0 0 -0 0</pose>
+    </include>
+
+    <include>
+      <uri>file:///home/matt/personal_research/src/mrs_robot_launcher/worlds/models/aws_robomaker_warehouse_Bucket_01</uri>
+      <name>aws_robomaker_warehouse_Bucket_01_4</name>
+      <pose>8.6 3.75 0 0 -0 0</pose>
+    </include>
+
+    <include>
+      <uri>file:///home/matt/personal_research/src/mrs_robot_launcher/worlds/models/aws_robomaker_warehouse_ClutteringC_01</uri>
+      <name>aws_robomaker_warehouse_ClutteringC_01</name>
+      <pose>-0.25 7.25 0 0 -0 0.25</pose>
+    </include>
+
+    <include>
+      <uri>file:///home/matt/personal_research/src/mrs_robot_launcher/worlds/models/aws_robomaker_warehouse_ClutteringA_01</uri>
+      <name>aws_robomaker_warehouse_ClutteringA_01_1</name>
+      <pose>1 2 0 0 -0 -0.25</pose>
+    </include>
+
+    <include>
+      <uri>file:///home/matt/personal_research/src/mrs_robot_launcher/worlds/models/aws_robomaker_warehouse_Bucket_01</uri>
+      <name>aws_robomaker_warehouse_Bucket_01_5</name>
+      <pose>-7.75 5.5 0 0 -0 -0.1</pose>
+    </include>
+
+    <include>
+      <uri>file:///home/matt/personal_research/src/mrs_robot_launcher/worlds/models/aws_robomaker_warehouse_Bucket_01</uri>
+      <name>aws_robomaker_warehouse_Bucket_01_6</name>
+      <pose>-3.5 4 0 0 -0 0.075</pose>
+    </include>
+
+    <include>
+      <uri>file:///home/matt/personal_research/src/mrs_robot_launcher/worlds/models/warehouse_PalletBoxes</uri>
+      <name>warehouse_PalletBoxes_13</name>
+      <pose>-8 3 0.01 0 -0 0</pose>
+    </include>
+
+    <include>
+      <uri>file:///home/matt/personal_research/src/mrs_robot_launcher/worlds/models/warehouse_PalletBoxes</uri>
+      <name>warehouse_PalletBoxes_14</name>
+      <pose>-4 8 0.01 0 -0 0.25</pose>
+    </include>
+
+    <include>
+      <uri>file:///home/matt/personal_research/src/mrs_robot_launcher/worlds/models/warehouse_PalletBoxes</uri>
+      <name>warehouse_PalletBoxes_15</name>
+      <pose>-2.25 -2.5 0.01 0 -0 -0.25</pose>
+    </include>
+
+    <include>
+      <uri>file:///home/matt/personal_research/src/mrs_robot_launcher/worlds/models/warehouse_PalletBoxes</uri>
+      <name>warehouse_PalletBoxes_16</name>
+      <pose>-7.5 -2.5 0.01 0 -0 0.1</pose>
+    </include>
+
+    <include>
+      <uri>file:///home/matt/personal_research/src/mrs_robot_launcher/worlds/models/aws_robomaker_warehouse_DeskC_01</uri>
+      <name>aws_robomaker_warehouse_DeskC_01</name>
+      <pose>-9.5 0 0 0 -0 0</pose>
+    </include>
+
+    <include>
+      <uri>file:///home/matt/personal_research/src/mrs_robot_launcher/worlds/models/warehouse_PalletBoxes</uri>
+      <name>warehouse_PalletBoxes_17</name>
+      <pose>-5.75 0.5 0.01 0 -0 -0.1</pose>
+    </include>
+
+    <include>
+      <uri>file:///home/matt/personal_research/src/mrs_robot_launcher/worlds/models/aws_robomaker_warehouse_ClutteringD_01</uri>
+      <name>aws_robomaker_warehouse_ClutteringD_01</name>
+      <pose>-7.5 8 -0.1 0 -0 0.7535</pose>
+    </include>
+
+    <include>
+      <uri>file:///home/matt/personal_research/src/mrs_robot_launcher/worlds/models/aws_robomaker_warehouse_ClutteringD_01</uri>
+      <name>aws_robomaker_warehouse_ClutteringD_01_0</name>
+      <pose>-5 -3.25 -0.1 0 -0 -0.7535</pose>
+    </include>
+
+    <include>
+      <uri>file:///home/matt/personal_research/src/mrs_robot_launcher/worlds/models/aws_robomaker_warehouse_PalletJackB_01</uri>
+      <name>aws_robomaker_warehouse_PalletJackB_01</name>
+      <pose>3.25 1.5 0 0 0 0</pose>
+    </include>
+
+  </world>
+</sdf>
