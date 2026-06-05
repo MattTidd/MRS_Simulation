@@ -111,7 +111,8 @@ def generate_launch_description():
     )
     
     # define parameters for launching agents:
-    positions           = [["-3.0", "-3.0"], ["-3.0", "3.0"], ["3.0", "3.0"], ["3.0", "-3.0"]]
+    # positions           = [["-3.0", "-3.0"], ["-3.0", "3.0"], ["3.0", "3.0"], ["3.0", "-3.0"]]
+    positions           = [["-9.0", "-5.0"], ["-6.0", "6.0"], ["1.0", "5.0"], ["1.0", "-4.0"]]
     agent_names         = ["agent1", "agent2", "agent3", "agent4"]
     agent_types         = ["typeA", "typeB", "typeA", "typeB"]
     agent_initial_xs    = [str(p[0]) for p in positions]
@@ -207,6 +208,7 @@ def generate_launch_description():
         gazebo, 
         ros_gz_bridge,
         delayed_gui,
-    ] + templates 
+    ] 
+    + templates 
     + bts
     )
