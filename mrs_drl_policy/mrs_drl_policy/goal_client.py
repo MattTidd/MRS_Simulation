@@ -83,7 +83,7 @@ class GoalClient(Node):
 
         # print result to user:
         self.get_logger().info(
-            f'{result.message} | Total distance travelled: {result.total_distance: 5.3f}')
+            f'{result.message} | Total distance travelled (client): {result.total_distance: 5.3f}')
         
         # set done flag to true:
         self._done = True
