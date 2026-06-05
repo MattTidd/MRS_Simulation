@@ -41,7 +41,7 @@ def create_tree(node : Node, model_path: str = "") -> py_trees.trees.BehaviourTr
     # main execution tree:
     execution_tree = py_trees.composites.Selector(
         name = "ExecutionTree",
-        memory = False, 
+        memory = True, 
         children = [
             navigate_to_goal,
             recall_auction
