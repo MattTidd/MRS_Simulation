@@ -27,12 +27,12 @@
     <gazebo reference = "${prefix}_lidar_link">
         <sensor name = "${prefix}_laser" type = "gpu_lidar">
             <pose>0 0 0.0093 0 0 0</pose>
-            <visualize>true</visualize>
-            <update_rate>60</update_rate>
+            <visualize>false</visualize>
+            <update_rate>10</update_rate>
             <lidar>
                 <scan>
                     <horizontal>
-                        <samples>1600</samples>
+                        <samples>360</samples>
                         <min_angle>${-piValue}</min_angle>
                         <max_angle>${piValue}</max_angle>
                     </horizontal>
@@ -56,7 +56,7 @@
     <gazebo reference = "${prefix}_imu_link">
         <sensor name = "imu_sensor" type = "imu">
             <always_on>1</always_on>
-            <update_rate>50</update_rate>
+            <update_rate>30</update_rate>
             <visualize>true</visualize>
             <topic>${prefix}_imu_data</topic>
         </sensor>
