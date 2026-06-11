@@ -524,5 +524,113 @@
       <name>aws_robomaker_warehouse_ClutteringD_01_0</name>
       <pose>-5 -3.25 -0.1 0 -0 -0.7535</pose>
     </include>
+
+    <include>
+      <uri>file:///home/matt/personal_research/src/mrs_robot_launcher/worlds/models/warehouse_CardboardBox</uri>
+      <name>warehouse_CardboardBox</name>
+      <pose>-0.1 -6.4 0 0 0 1.57</pose>
+    </include>
+
+    <include>
+      <uri>file:///home/matt/personal_research/src/mrs_robot_launcher/worlds/models/warehouse_CardboardBox</uri>
+      <name>warehouse_CardboardBox_0</name>
+      <pose>-0.1 -8.4 0 0 0 1.57</pose>
+    </include>
+
+    <include>
+      <uri>file:///home/matt/personal_research/src/mrs_robot_launcher/worlds/models/warehouse_CardboardBox</uri>
+      <name>warehouse_CardboardBox_1</name>
+      <pose>-2 -6.4 0 0 0 1.57</pose>
+    </include>
+
+    <include>
+      <uri>file:///home/matt/personal_research/src/mrs_robot_launcher/worlds/models/warehouse_CardboardBox</uri>
+      <name>warehouse_CardboardBox_2</name>
+      <pose>-2 -8.4 0 0 0 1.57</pose>
+    </include>
+
+    <include>
+      <uri>file:///home/matt/personal_research/src/mrs_robot_launcher/worlds/models/warehouse_CardboardBox</uri>
+      <name>warehouse_CardboardBox_3</name>
+      <pose>-4 -6.4 0 0 0 1.57</pose>
+    </include>
+
+    <include>
+      <uri>file:///home/matt/personal_research/src/mrs_robot_launcher/worlds/models/warehouse_CardboardBox</uri>
+      <name>warehouse_CardboardBox_4</name>
+      <pose>-4 -8.4 0 0 0 1.57</pose>
+    </include>
+
+    <include>
+      <uri>file:///home/matt/personal_research/src/mrs_robot_launcher/worlds/models/warehouse_CardboardBox</uri>
+      <name>warehouse_CardboardBox_5</name>
+      <pose>-5.1 -6.4 0 0 0 1.57</pose>
+    </include>
+
+    <include>
+      <uri>file:///home/matt/personal_research/src/mrs_robot_launcher/worlds/models/warehouse_CardboardBox</uri>
+      <name>warehouse_CardboardBox_6</name>
+      <pose>-5.1 -8.4 0 0 0 1.57</pose>
+    </include>
+
+    <include>
+      <uri>file:///home/matt/personal_research/src/mrs_robot_launcher/worlds/models/warehouse_CardboardBox</uri>
+      <name>warehouse_CardboardBox_7</name>
+      <pose>-7 -6.4 0 0 0 1.57</pose>
+    </include>
+
+    <include>
+      <uri>file:///home/matt/personal_research/src/mrs_robot_launcher/worlds/models/warehouse_CardboardBox</uri>
+      <name>warehouse_CardboardBox_8</name>
+      <pose>-7 -8.4 0 0 0 1.57</pose>
+    </include>
+
+    <include>
+      <uri>file:///home/matt/personal_research/src/mrs_robot_launcher/worlds/models/warehouse_CardboardBox</uri>
+      <name>warehouse_CardboardBox_9</name>
+      <pose>-9 -6.4 0 0 0 1.57</pose>
+    </include>
+
+    <include>
+      <uri>file:///home/matt/personal_research/src/mrs_robot_launcher/worlds/models/warehouse_CardboardBox</uri>
+      <name>warehouse_CardboardBox_10</name>
+      <pose>-9 -8.4 0 0 0 1.57</pose>
+    </include>
+
+    <include>
+      <uri>file:///home/matt/personal_research/src/mrs_robot_launcher/worlds/models/warehouse_CardboardBox</uri>
+      <name>warehouse_CardboardBox_11</name>
+      <pose>3.4 4.25 0 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>file:///home/matt/personal_research/src/mrs_robot_launcher/worlds/models/warehouse_CardboardBox</uri>
+      <name>warehouse_CardboardBox_12</name>
+      <pose>4.0 4.25 0 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>file:///home/matt/personal_research/src/mrs_robot_launcher/worlds/models/warehouse_CardboardBox</uri>
+      <name>warehouse_CardboardBox_13</name>
+      <pose>4.6 4.25 0 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>file:///home/matt/personal_research/src/mrs_robot_launcher/worlds/models/warehouse_CardboardBox</uri>
+      <name>warehouse_CardboardBox_14</name>
+      <pose>3.4 9 0 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>file:///home/matt/personal_research/src/mrs_robot_launcher/worlds/models/warehouse_CardboardBox</uri>
+      <name>warehouse_CardboardBox_15</name>
+      <pose>4.0 9 0 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>file:///home/matt/personal_research/src/mrs_robot_launcher/worlds/models/warehouse_CardboardBox</uri>
+      <name>warehouse_CardboardBox_16</name>
+      <pose>4.6 9 0 0 0 0</pose>
+    </include>
   </world>
 </sdf>
