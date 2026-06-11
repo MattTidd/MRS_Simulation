@@ -83,10 +83,12 @@ def generate_launch_description():
     # define the paths:
     pkg_path           = get_package_share_directory("mrs_robot_launcher")
     bt_pkg_path        = get_package_share_directory("mrs_bt_handler")
+    gui_path           = get_package_share_directory("system_gui")
     template_path      = PathJoinSubstitution([pkg_path, "launch", "base_launch.py"])
     bt_launch_path     = PathJoinSubstitution([bt_pkg_path, "launch", "bt_launch.py"])
     gazebo_launch_path = PathJoinSubstitution([pkg_path, "launch", "gazebo_launch.py"])
     goal_launch_path   = PathJoinSubstitution([pkg_path, "launch", "goal_launch.py"])
+    points_path        = os.path.join(gui_path, "locations", "points.JSON")
 
     # define the arguments for launching:
     use_sim_time = LaunchConfiguration("use_sim_time")
@@ -194,7 +196,8 @@ def generate_launch_description():
             "agent_names"       : agent_names,
             "positions"         : flattened_positions,
             "agent_initial_yaw" : flattened_yaws,
-            "world_name"        : world
+            "world_name"        : world,
+            "points_path"       : points_path
         }]
     )
 
