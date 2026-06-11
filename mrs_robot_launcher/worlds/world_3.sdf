@@ -524,12 +524,5 @@
       <name>aws_robomaker_warehouse_ClutteringD_01_0</name>
       <pose>-5 -3.25 -0.1 0 -0 -0.7535</pose>
     </include>
-
-    <include>
-      <uri>file:///home/matt/personal_research/src/mrs_robot_launcher/worlds/models/aws_robomaker_warehouse_PalletJackB_01</uri>
-      <name>aws_robomaker_warehouse_PalletJackB_01</name>
-      <pose>-1 -6.25 0 0 0 -1.57</pose>
-    </include>
-
   </world>
 </sdf>
