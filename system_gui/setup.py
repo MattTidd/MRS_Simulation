@@ -1,4 +1,5 @@
 from setuptools import find_packages, setup
+from glob import glob
 
 package_name = 'system_gui'
 
@@ -10,6 +11,10 @@ setup(
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
+
+        # install all files in locations directory:
+        ('share/' + package_name + '/locations',
+         glob('locations/*')),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
