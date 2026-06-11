@@ -1,6 +1,9 @@
 # import packages:
 import re
 import sys
+import json
+import os
+import random
 import time
 import threading
 import signal
@@ -46,19 +49,25 @@ class GuiNode(Node):
         self.declare_parameter("positions", [0.0])
         self.declare_parameter("agent_initial_yaw", [0.0])
         self.declare_parameter("agent_names", [""])
-        self.declare_parameter("world_name", "world_1")
+        self.declare_parameter("world_name", "world_3")
+        self.declare_parameter("points_path", "")
 
         # add parameters to the class:
         flat                 = self.get_parameter("positions").value
         yaws                 = self.get_parameter("agent_initial_yaw").value
         names                = self.get_parameter("agent_names").value
         world_path           = self.get_parameter("world_name").value
+        points_path          = self.get_parameter("points_path").value
         
         self.world_name      = re.split(r'[/.]', world_path)[-2]
         positions            = [[flat[i], flat[i+1]] for i in range(0, len(flat), 2)]
         self.agent_positions = dict(zip(names, positions))
         self.agent_yaws      = dict(zip(names, yaws))
 
+        # get list of points in default world:
+        with open(points_path) as f:
+            self.goal_points = json.load(f)["goals"]
+    
         # establish subscribers:
         self.goal_sub  = self.create_subscription(Goal, "/goal", self._goal_callback, 10)
 
@@ -203,10 +212,14 @@ class MainWindow(QWidget):
         self.reset_sim_button.clicked.connect(self._on_reset_sim_clicked)
         grid1.addWidget(self.reset_sim_button, 0, 0, alignment = Qt.AlignCenter)
 
+        self.randomize_mission_button = QPushButton("Randomize Mission")
+        self.randomize_mission_button.clicked.connect(self._on_randomize_mission_clicked)
+        grid1.addWidget(self.randomize_mission_button, 0, 1, alignment = Qt.AlignCenter)
+
         # add a button for starting the simulation:
         self.start_sim_button = QPushButton("Start Simulation")
         self.start_sim_button.clicked.connect(self._on_start_sim_clicked)
-        grid1.addWidget(self.start_sim_button, 0, 1, alignment = Qt.AlignCenter)
+        grid1.addWidget(self.start_sim_button, 0, 2, alignment = Qt.AlignCenter)
 
         # add child layouts to main layout:
         main_layout.addWidget(group0)
@@ -229,6 +242,7 @@ class MainWindow(QWidget):
 
         # modify text of buttons:
         self.queue_goal_button.setText("Waiting...")
+        self.randomize_mission_button.setText("Waiting...")
 
     # method for enabling the buttons:
     def _enable_buttons(self):
@@ -241,6 +255,7 @@ class MainWindow(QWidget):
 
         # modify the text of the buttons:
         self.queue_goal_button.setText("Publish Goal")
+        self.randomize_mission_button.setText("Randomize Mission")
 
     # method for killing nodes:
     def _kill_namespaced_node(self, namespace : str, node = None):
@@ -400,6 +415,50 @@ class MainWindow(QWidget):
 
         # publish the message:
         self.node.start_pub.publish(msg)
+
+        # re-enable the buttons:
+        time.sleep(2)
+        self.button_handling.emit()
+
+    # method for pressing the randomize mission buttom:
+    def _on_randomize_mission_clicked(self):
+        """
+        Method for when the randomize mission button has been hit. Locks all buttons on the GUI and instantiates another thread,
+        which calls the ``_randomize_mission_process()`` method.
+        """
+        # lock buttons:
+        self._lock_buttons()
+
+        # use another thread to call the button execution:
+        threading.Thread(target = self._randomize_mission_process, args = (), daemon = True).start()
+
+    # method for randomize mission process:
+    def _randomize_mission_process(self):
+        """
+        Method responsible for queuing a randomized mission. This method is ran within its own thread. Samples ten randomized goal positions and requirements,
+        and then appends these to the goal queue.
+        """
+        # clear the goal queue:
+        self.goal_queue.clear()
+
+        # goal types:
+        goal_types = ["typeA", "typeB"]
+
+        # sample ten random goal positions from the set of possible positions:
+        goals = random.sample(self.node.goal_points, 3)
+        
+        # for every goal that was sampled from the points:
+        for goal in goals:
+            # form a goal:
+            goal_type = random.choice(goal_types)
+            x = goal[0]
+            y = goal[1]
+
+            # append to the queue:
+            self.goal_queue[f"goal_{len(self.goal_queue) + 1}"] = [goal_type, x, y]
+
+        # let user know that a mission has been formed:
+        self.node.get_logger().info("Mission formed!")
 
         # re-enable the buttons:
         time.sleep(2)
