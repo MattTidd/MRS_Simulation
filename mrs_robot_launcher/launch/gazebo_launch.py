@@ -20,8 +20,8 @@ def generate_launch_description():
     world = PathJoinSubstitution([pkg_path, "worlds", LaunchConfiguration("world")])
     world_arg = DeclareLaunchArgument(
         name = "world",
-        default_value = "empty_world.sdf",
-        description = "Name of the world to be loaded, defaulting to empty_world.sdf"
+        default_value = "world_3.sdf",
+        description = "Name of the world to be loaded, defaulting to world_3.sdf"
     )
 
     # define the nodes to be launched:
