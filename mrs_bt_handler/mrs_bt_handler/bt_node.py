@@ -58,6 +58,9 @@ class BTNode(Node):
         :param goal_tolerance: Minimum threshold for successful navigation, in meters.
         :type goal_tolerance: float
 
+        :param goal_timeout: Allotted time for goal completion, in seconds.
+        :type goal_timeout: float
+
         """
         # inherit from parent class:
         super().__init__("bt_node") # set the name of the node
@@ -72,6 +75,7 @@ class BTNode(Node):
         self.declare_parameter("num_agents", 2)
         self.declare_parameter("model_path", "")
         self.declare_parameter("goal_tolerance", 0.125)
+        self.declare_parameter("goal_timeout", 60.0)
 
         ##### add parameters to the class: #####
         self.agent_name        = self.get_parameter("agent_name").value
@@ -83,6 +87,7 @@ class BTNode(Node):
         self.num_agents        = self.get_parameter("num_agents").value
         self.model_path        = self.get_parameter("model_path").value
         self.goal_tolerance    = self.get_parameter("goal_tolerance").value
+        self.goal_timeout      = self.get_parameter("goal_timeout").value
 
         ##### storage for the important states that are used by the node/tree: #####
         self.goal:                  PoseStamped     |   None    =     None      # current pose of goal
@@ -328,7 +333,8 @@ class BTNode(Node):
                 "ros2", "run", "mrs_drl_policy", "policy_node", "--ros-args", 
                 "-p", f"model_name:={self.model_name}",
                 "-p", f"agent_name:={self.agent_name}",
-                "-p", f"agent_initial_yaw:={self.agent_initial_yaw}"], start_new_session = True)
+                "-p", f"agent_initial_yaw:={self.agent_initial_yaw}",
+                "-p", f"goal_timeout:={self.goal_timeout}"], start_new_session = True)
             
         # if there is no active goal process:
         if self.goal_process is None or self.goal_process.poll() is not None:
