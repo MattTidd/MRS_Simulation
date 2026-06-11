@@ -108,8 +108,8 @@ def generate_launch_description():
     world = PathJoinSubstitution([pkg_path, "worlds", LaunchConfiguration("world")])
     world_arg = DeclareLaunchArgument(
         "world",
-        default_value = "world_1.sdf",
-        description = "Name of the world to be loaded, defaulting to world_1.sdf"
+        default_value = "world_3.sdf",
+        description = "Name of the world to be loaded, defaulting to world_3.sdf"
     )
     
     # define parameters for launching agents:
