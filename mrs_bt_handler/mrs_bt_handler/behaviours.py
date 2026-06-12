@@ -416,7 +416,7 @@ class NavigateToGoal(py_trees.behaviour.Behaviour):
     - Inherits from ``py_trees.behaviour.Behaviour``
     """
     # constructor for the behaviour:
-    def __init__(self, node, timeout : float = 30.0):
+    def __init__(self, node):
         """
         Constructor for the behaviour. 
 
@@ -437,7 +437,7 @@ class NavigateToGoal(py_trees.behaviour.Behaviour):
         self.node = node
 
         # add timer for timeout tracking:
-        self.timeout     = timeout
+        self.timeout     = self.node.goal_timeout
         self._start_time = None
 
     # define initialise method for class:
