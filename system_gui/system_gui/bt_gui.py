@@ -2,6 +2,8 @@
 import re
 import sys
 import json
+import tempfile
+import yaml
 import os
 import random
 import time
@@ -17,6 +19,65 @@ from std_msgs.msg import String
 # gui-specific packages:
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QGridLayout, QComboBox, QPushButton, QGroupBox, QLineEdit
 from PyQt5.QtCore import QTimer, Qt, pyqtSignal 
+
+# method for generating the bridge parameters .yaml file:
+def generate_bridge_config(agent_names : list) -> str:
+    # initialize an empty list to hold parameters:
+    bridge_params = []
+
+    # add the clock bridge, which is always present:
+    bridge_params.append({
+        "direction" : "GZ_TO_ROS",
+        "gz_topic_name" : "clock",
+        "gz_type_name" : "gz.msgs.Clock",
+        "ros_topic_name" : "clock",
+        "ros_type_name" : "rosgraph_msgs/msg/Clock"
+    })
+
+    # need to add the bridged sensor topics:
+    for agent in agent_names:
+        bridge_params += [
+            # add the cmd_vel port:
+            {
+                "direction" : "ROS_TO_GZ",
+                "gz_topic_name" : f"{agent}_cmd_vel",
+                "gz_type_name" : "gz.msgs.Twist",
+                "ros_topic_name" : f"{agent}/cmd_vel",
+                "ros_type_name" : "geometry_msgs/msg/TwistStamped"
+            }, 
+            # add the scan port:
+            {
+                "direction" : "GZ_TO_ROS",
+                "gz_topic_name" : f"{agent}_scan",
+                "gz_type_name" : "gz.msgs.LaserScan",
+                "ros_topic_name" : f"{agent}/scan",
+                "ros_type_name" : "sensor_msgs/msg/LaserScan"
+            },
+            # add the scan points port:
+            {
+                "direction" : "GZ_TO_ROS",
+                "gz_topic_name" : f"{agent}_scan/points",
+                "gz_type_name" : "gz.msgs.PointCloudPacked",
+                "ros_topic_name" : f"{agent}/scan/points",
+                "ros_type_name" : "sensor_msgs/msg/PointCloud2"
+            },
+            # add the IMU port:
+            {
+                "direction" : "GZ_TO_ROS",
+                "gz_topic_name" : f"{agent}_imu_data",
+                "gz_type_name" : "gz.msgs.IMU",
+                "ros_topic_name" : f"{agent}/imu_data",
+                "ros_type_name" : "sensor_msgs/msg/Imu"
+            }
+        ]
+
+    # write these parameters to a file and return its path:
+    tmp = tempfile.NamedTemporaryFile(mode = "w", suffix = ".yaml", delete = False)
+    yaml.dump(bridge_params, tmp)
+    tmp.close()
+
+    # return file path to user:
+    return tmp.name
 
 # class for the main node:
 class GuiNode(Node):
@@ -46,23 +107,13 @@ class GuiNode(Node):
         self.get_logger().info("GUI node started")
 
         # declare parameters:
-        self.declare_parameter("positions", [0.0])
-        self.declare_parameter("agent_initial_yaw", [0.0])
-        self.declare_parameter("agent_names", [""])
         self.declare_parameter("world_name", "world_3")
         self.declare_parameter("points_path", "")
 
         # add parameters to the class:
-        flat                 = self.get_parameter("positions").value
-        yaws                 = self.get_parameter("agent_initial_yaw").value
-        names                = self.get_parameter("agent_names").value
         world_path           = self.get_parameter("world_name").value
         points_path          = self.get_parameter("points_path").value
-        
         self.world_name      = re.split(r'[/.]', world_path)[-2]
-        positions            = [[flat[i], flat[i+1]] for i in range(0, len(flat), 2)]
-        self.agent_positions = dict(zip(names, positions))
-        self.agent_yaws      = dict(zip(names, yaws))
 
         # get list of points in default world:
         with open(points_path) as f:
@@ -111,22 +162,19 @@ class MainWindow(QWidget):
         # add the node to the GUI:
         self.node = node
 
-        # get the position dict:
-        self.agent_positions = self.node.agent_positions
-        self.agent_yaws      = self.node.agent_yaws
-
         # flag for despawning:
         self.goal_number = 0
 
-        # set an empty dict for goal queuing:
+        # set empty dicts for queuing:
         self.goal_queue = {}
+        self.agent_queue = {}
 
         # set the title of window:
         self.setWindowTitle("ROS2 MRS GUI")
 
         # set the size of the GUI:
         self.setFixedWidth(600)
-        self.setFixedHeight(300)
+        self.setFixedHeight(400)
 
         # set a style sheet:
         self.setStyleSheet("""
@@ -157,7 +205,7 @@ class MainWindow(QWidget):
                 font-size: 14px;
             }
             QLineEdit {
-                min-width: 100px;
+                min-width: 120px;
                 min-height: 20px;
             }
         """)
@@ -167,15 +215,57 @@ class MainWindow(QWidget):
         main_layout.setSpacing(15)
 
         # instantiate the child layouts:
-        group0 = QGroupBox("Goal Settings:")
+        group0 = QGroupBox("Agent Settings:")
         grid0  = QGridLayout()
         group0.setLayout(grid0)
 
-        group1 = QGroupBox("Simulation Settings:")
+        group1 = QGroupBox("Goal Settings:")
         grid1  = QGridLayout()
         group1.setLayout(grid1)
 
-        ##### grid 0 - goal related settings: #####
+        group2 = QGroupBox("Simulation Settings:")
+        grid2  = QGridLayout()
+        group2.setLayout(grid2)
+
+        ##### grid 0 - agent related settings: #####
+        # add a typeable field for setting the agent name:
+        self.agent_name_input = QLineEdit()
+        self.agent_name_input.setPlaceholderText("Agent Name")
+        self.agent_name_input.setAlignment(Qt.AlignCenter)
+        grid0.addWidget(self.agent_name_input, 0, 0, alignment = Qt.AlignCenter)
+
+        # add a combo box for setting the agent type:
+        self.agent_type_combo_box = QComboBox()
+        self.agent_type_combo_box.setEditable(True)
+        self.agent_type_combo_box.lineEdit().setAlignment(Qt.AlignCenter)
+        self.agent_type_combo_box.lineEdit().setReadOnly(True)
+        self.agent_type_combo_box.addItem("typeA")
+        self.agent_type_combo_box.addItem("typeB")
+        grid0.addWidget(self.agent_type_combo_box, 1, 0, alignment = Qt.AlignCenter)
+
+        # add a typeable field for setting the agent x position:
+        self.agent_x_pos = QLineEdit()
+        self.agent_x_pos.setPlaceholderText("X Position")
+        self.agent_x_pos.setAlignment(Qt.AlignCenter)
+        grid0.addWidget(self.agent_x_pos, 0, 1, alignment = Qt.AlignCenter)
+
+        # add a typeable field for setting the agent y position:
+        self.agent_y_pos = QLineEdit()
+        self.agent_y_pos.setPlaceholderText("Y Position")
+        self.agent_y_pos.setAlignment(Qt.AlignCenter)
+        grid0.addWidget(self.agent_y_pos, 1, 1, alignment = Qt.AlignCenter)
+
+        # add a button for queuing the agent:
+        self.agent_queue_button = QPushButton("Queue Agent")
+        self.agent_queue_button.clicked.connect(self._on_agent_queue_clicked)
+        grid0.addWidget(self.agent_queue_button, 0, 2, alignment = Qt.AlignCenter)
+
+        # add a button for spawning all agents:
+        self.agent_spawn_button = QPushButton("Spawn Agents")
+        self.agent_spawn_button.clicked.connect(self._on_agent_spawn_clicked)
+        grid0.addWidget(self.agent_spawn_button, 1, 2, alignment = Qt.AlignCenter)
+
+        ##### grid 1 - goal related settings: #####
         # need to have a combo box for selecting the goal type:
         self.goal_type_combo_box = QComboBox()
         self.goal_type_combo_box.setEditable(True)
@@ -187,43 +277,40 @@ class MainWindow(QWidget):
         self.goal_type_combo_box.addItem("typeB")
 
         # add combo box to the grid:
-        grid0.addWidget(self.goal_type_combo_box, 0, 0, alignment = Qt.AlignCenter)
+        grid1.addWidget(self.goal_type_combo_box, 0, 0, 2, 1, alignment = Qt.AlignCenter)
 
         # add an entry field for the goal x-position:
         self.x_input = QLineEdit()
-        self.x_input.setPlaceholderText("x position")
+        self.x_input.setPlaceholderText("X Position")
         self.x_input.setAlignment(Qt.AlignCenter)
-        grid0.addWidget(self.x_input, 0, 1, alignment = Qt.AlignCenter)
+        grid1.addWidget(self.x_input, 0, 1, alignment = Qt.AlignCenter)
 
         # add an entry field for the goal y-position:
         self.y_input = QLineEdit()
-        self.y_input.setPlaceholderText("y position")
+        self.y_input.setPlaceholderText("Y Position")
         self.y_input.setAlignment(Qt.AlignCenter)
-        grid0.addWidget(self.y_input, 0, 2, alignment = Qt.AlignCenter)
+        grid1.addWidget(self.y_input, 1, 1, alignment = Qt.AlignCenter)
 
         # add a button for queueing goals:
         self.queue_goal_button = QPushButton("Queue Goal")
         self.queue_goal_button.clicked.connect(self._on_queue_goal_clicked)
-        grid0.addWidget(self.queue_goal_button, 0, 3, alignment = Qt.AlignCenter)
+        grid1.addWidget(self.queue_goal_button, 0, 3, 2, 1, alignment = Qt.AlignCenter)
 
-        ##### grid 1 - simulation related settings: #####
+        ##### grid 2 - simulation related settings: #####
         # add a button for resetting the simulation:
         self.reset_sim_button = QPushButton("Reset Simulation")
         self.reset_sim_button.clicked.connect(self._on_reset_sim_clicked)
-        grid1.addWidget(self.reset_sim_button, 0, 0, alignment = Qt.AlignCenter)
-
-        self.randomize_mission_button = QPushButton("Randomize Mission")
-        self.randomize_mission_button.clicked.connect(self._on_randomize_mission_clicked)
-        grid1.addWidget(self.randomize_mission_button, 0, 1, alignment = Qt.AlignCenter)
+        grid2.addWidget(self.reset_sim_button, 0, 0, alignment = Qt.AlignCenter)
 
         # add a button for starting the simulation:
         self.start_sim_button = QPushButton("Start Simulation")
         self.start_sim_button.clicked.connect(self._on_start_sim_clicked)
-        grid1.addWidget(self.start_sim_button, 0, 2, alignment = Qt.AlignCenter)
+        grid2.addWidget(self.start_sim_button, 0, 2, alignment = Qt.AlignCenter)
 
         # add child layouts to main layout:
         main_layout.addWidget(group0)
         main_layout.addWidget(group1)
+        main_layout.addWidget(group2)
 
         # apply the layout:
         self.setLayout(main_layout)
@@ -239,10 +326,15 @@ class MainWindow(QWidget):
         """
         # lock all buttons:
         self.queue_goal_button.setEnabled(False)
+        self.agent_spawn_button.setEnabled(False)
+        self.agent_queue_button.setEnabled(False)
+        self.start_sim_button.setEnabled(False)
 
         # modify text of buttons:
         self.queue_goal_button.setText("Waiting...")
-        self.randomize_mission_button.setText("Waiting...")
+        self.agent_spawn_button.setText("Waiting...")
+        self.agent_queue_button.setText("Waiting...")
+        self.start_sim_button.setText("Waiting...")
 
     # method for enabling the buttons:
     def _enable_buttons(self):
@@ -252,10 +344,177 @@ class MainWindow(QWidget):
         """
         # unlock buttons:
         self.queue_goal_button.setEnabled(True)
+        self.agent_spawn_button.setEnabled(True)
+        self.agent_queue_button.setEnabled(True)
+        self.start_sim_button.setEnabled(True)
 
         # modify the text of the buttons:
         self.queue_goal_button.setText("Publish Goal")
-        self.randomize_mission_button.setText("Randomize Mission")
+        self.agent_spawn_button.setText("Spawn Agents")
+        self.agent_queue_button.setText("Queue Agent")
+        self.start_sim_button.setText("Start Simulation")
+
+    # method for queuing goals:
+    def _on_queue_goal_clicked(self):
+        """
+        Method for when the queue goal button has been hit. Locks all buttons on the GUI and instantiates another thread, 
+        which calls the ``_goal_queue_process()`` method.
+        """
+        # lock buttons:
+        self._lock_buttons()
+
+        # use another thread to call the button execution:
+        threading.Thread(target = self._goal_queue_process, args = (), daemon = True).start()
+
+    # method for goal queue process:
+    def _goal_queue_process(self):
+        """
+        Method responsible for the actual queuing of goals. This method is ran within its own thread. Extracts values 
+        related to the desired goal, verifies that they are correct, and then adds that goal to a goal queue dictionary, before 
+        unlocking the buttons of the GUI.
+        """
+        # print to the user:
+        self.node.get_logger().info(f"Adding goal to queue...")
+
+        # extract the values related to the goal: 
+        x = self.x_input.text()
+        y = self.y_input.text()
+        goal_type = self.goal_type_combo_box.currentText()
+
+        # ensure that these values are their correct typings:
+        try: 
+            x = float(x)
+            y = float(y)
+        # catch the exception on value typing:
+        except Exception as e:
+            self.node.get_logger().info(f"Provided goal pose is invalid: {e}")
+
+            # perform the re-enable before returning:
+            time.sleep(0.5)
+            self.button_handling.emit()
+            return
+
+        # add current goal into the goal queue dictionary:
+        self.goal_queue[f"goal_{len(self.goal_queue) + 1}"] = [goal_type, x, y]
+
+        # re-enable buttons:
+        time.sleep(0.5)
+        self.button_handling.emit()
+
+    # method for queuing agents:
+    def _on_agent_queue_clicked(self):
+        """
+        Method for when the agent queue button has been hit. Locks all buttons on the GUI and instantiates another thread, which calls
+        the ``_agent_queue_process()`` method. 
+        """
+        # lock buttons:
+        self._lock_buttons()
+
+        # use another thread to call the button execution:
+        threading.Thread(target = self._agent_queue_process, args = (), daemon = True).start()
+
+    # method for agent queue process:
+    def _agent_queue_process(self):
+        """
+        Method responsible for the actual queuing of agents. This method is ran within its own thread. Extracts values 
+        related to the agent, verifies that they are correct, and then adds that agent to an agent queue dictionary, before 
+        unlocking the buttons of the GUI.
+        """
+        # print to the user:
+        self.node.get_logger().info(f"Adding agent to queue...")
+
+        # extract the values related to the agent:
+        agent_x_pos = self.agent_x_pos.text()
+        agent_y_pos = self.agent_y_pos.text()
+        agent_name  = self.agent_name_input.text()
+        agent_type  = self.agent_type_combo_box.currentText()
+
+        # ensure that these values are their correct typings:
+        try: 
+            agent_x_pos = float(agent_x_pos)
+            agent_y_pos = float(agent_y_pos)
+        # catch the exception on value typing:
+        except Exception as e:
+            self.node.get_logger().info(f"Provided agent pose is invalid: {e}")
+
+            # perform the re-enable before returning:
+            time.sleep(0.5)
+            self.button_handling.emit()
+            return
+        
+        # add agent to agent queue:
+        self.agent_queue[agent_name] = [agent_type, agent_x_pos, agent_y_pos]
+
+        # re-enable buttons:
+        time.sleep(0.5)
+        self.button_handling.emit()
+
+    # method for spawning agents:
+    def _on_agent_spawn_clicked(self):
+        """
+        Method for when the agent spawn button has been hit. Locks all buttons on the GUI and instantiates another thread, which calls
+        the ``_agent_spawn_process()`` method. 
+        """
+        # lock buttons:
+        self._lock_buttons()
+
+        # use another thread to call the button execution:
+        threading.Thread(target = self._agent_spawn_process, args = (), daemon = True).start()
+
+    # method for agent spawn process:
+    def _agent_spawn_process(self):
+        """
+        Method responsible for the actual spawning of agents. This method is ran within its own thread. Pops agents from the 
+        agent queue, and spawns them within the environment, launching their odometry and BT nodes in the process, before 
+        unlocking the buttons.
+        """
+        # need to start the ROS2-gazebo bridge:
+        bridge_path = generate_bridge_config(agent_names = list(self.agent_queue.keys()))
+        self.bridge_process = subprocess.Popen(["ros2", "run", "ros_gz_bridge", "parameter_bridge",
+                                                "--ros-args", "-p", f"config_file:={bridge_path}"], 
+                                                stdout = subprocess.DEVNULL,
+                                                stderr = subprocess.DEVNULL)
+        
+        # for every agent that has been added to the queue:
+        for agent in self.agent_queue:
+            # check to see that agent has not yet been spawned:
+            result = subprocess.run(["pgrep", "-f", f"robot_state_pub.*__ns:=/{agent}"],
+                                    capture_output = True,
+                                    text = True)
+            
+            # get the PID of the process:
+            pid = result.stdout.strip()
+
+            # if the process exists:
+            if pid:
+                self.node.get_logger().info(f"{agent} spawned already!")
+                pass
+            else:
+                # get the type, x position, and y position of the agent:
+                agent_type, agent_x_pos, agent_y_pos = self.agent_queue[agent]
+
+                # need to then launch the nodes corresponding to that agent:
+                self.agent_process = subprocess.Popen(["ros2", "launch", "mrs_robot_launcher", "base_launch.py",
+                                                        f"agent_name:={agent}",
+                                                        f"agent_type:={agent_type}",
+                                                        f"agent_initial_x_pos:={agent_x_pos}",
+                                                        f"agent_initial_y_pos:={agent_y_pos}",
+                                                        f"agent_initial_yaw:={0.0}"])
+                
+                self.bt_process = subprocess.Popen(["ros2", "launch", "mrs_bt_handler", "bt_launch.py",
+                                                    f"agent_name:={agent}",
+                                                    f"agent_type:={agent_type}",
+                                                    f"num_agents:={len(self.agent_queue)}",
+                                                    f"agent_initial_x:={agent_x_pos}",
+                                                    f"agent_initial_y:={agent_y_pos}",
+                                                    f"agent_initial_yaw:={0.0}"])
+                
+                # add a slight delay between spawns:
+                time.sleep(2.5)
+            
+        # re-enable buttons:
+        time.sleep(0.5)
+        self.button_handling.emit()
 
     # method for killing nodes:
     def _kill_namespaced_node(self, namespace : str, node = None):
@@ -305,53 +564,6 @@ class MainWindow(QWidget):
                 if pid:
                     subprocess.run(["kill", pid])
 
-    # method for queuing goals:
-    def _on_queue_goal_clicked(self):
-        """
-        Method for when the queue goal button has been hit. Locks all buttons on the GUI and instantiates another thread, 
-        which calls the ``_goal_queue_process()`` method.
-        """
-        # lock buttons:
-        self._lock_buttons()
-
-        # use another thread to call the button execution:
-        threading.Thread(target = self._goal_queue_process, args = (), daemon = True).start()
-
-    # method for goal queue process:
-    def _goal_queue_process(self):
-        """
-        Method responsible for the actual queuing of goals. This method is ran within its own thread. Extracts values 
-        related to the desired goal, verifies that they are correct, and then adds that goal to a goal queue dictionary, before 
-        unlocking the buttons of the GUI.
-        """
-        # print to the user:
-        self.node.get_logger().info(f"Adding goal to queue...")
-
-        # extract the values related to the goal: 
-        x = self.x_input.text()
-        y = self.y_input.text()
-        goal_type = self.goal_type_combo_box.currentText()
-
-        # ensure that these values are their correct typings:
-        try: 
-            x = float(x)
-            y = float(y)
-        # catch the exception on value typing:
-        except Exception as e:
-            self.node.get_logger().info(f"Provided goal pose is invalid: {e}")
-
-            # perform the re-enable before returning:
-            time.sleep(1)
-            self.button_handling.emit()
-            return
-
-        # add current goal into the goal queue dictionary:
-        self.goal_queue[f"goal_{len(self.goal_queue) + 1}"] = [goal_type, x, y]
-
-        # re-enable buttons:
-        time.sleep(1)
-        self.button_handling.emit()
-
     # method for pressing the reset sim button:
     def _on_reset_sim_clicked(self):
         """
@@ -362,11 +574,10 @@ class MainWindow(QWidget):
         self._lock_buttons()
 
         # use another thread to call the button execution:
-        for agent_name in self.agent_positions:
-            threading.Thread(target = self._reset_sim_process, args = (agent_name, ), daemon = True).start()
+        threading.Thread(target = self._reset_sim_process, args = (), daemon = True).start()
 
     # method for reset sim process:
-    def _reset_sim_process(self, agent_name : str):
+    def _reset_sim_process(self):
         """
         Method responsible for the actual resetting of the simulation. This method is ran within its own thread. Extracts the 
         positions of each agent, and moves the agent to its initial pose using a subprocess Gazebo service call. The 
@@ -377,92 +588,136 @@ class MainWindow(QWidget):
         :param agent_name: Name of the agent to be reset.
         :type agent_name: str
         """
-        # need to extract the positions of each agent:
-        pos  = self.agent_positions[agent_name]
-        yaw  = self.agent_yaws[agent_name]
-        x, y = pos[0], pos[1]
-        qz = np.sin(yaw / 2)
-        qw = np.cos(yaw / 2)
-
-        # move the position of the agent name passed to the process:
-        subprocess.run(["ign", "service", "-s", f"/world/{self.node.world_name}/set_pose",
-                        "--reqtype", "ignition.msgs.Pose",
-                        "--reptype", "ignition.msgs.Boolean",
-                        "--timeout", "2000",
-                        "--req", f"name: '{agent_name}', position: {{x: {x}, y: {y}, z: {0.0}}}, orientation: {{x: {0.0}, y: {0.0}, z: {qz}, w: {qw}}}"])
-        
-        # kill the nodes related to the odometry of that agent:
-        self._kill_namespaced_node(namespace = agent_name)
-
-        # call the launch file for the odometry nodes:
-        self.odom_process = subprocess.Popen(["ros2", "launch", "mrs_robot_launcher", "odom_launch.py", f"agent_name:={agent_name}"])
-
-        # despawn the goal:
-        self._kill_namespaced_node(namespace = "goal", node = "robot_state_pub")
-
-        subprocess.run(["ign", "service", "-s", f"/world/{self.node.world_name}/remove",
-                    "--reqtype", "ignition.msgs.Entity",
-                    "--reptype", "ignition.msgs.Boolean",
-                    "--timeout", "2000",
-                    "--req", f"name: 'goal' type: MODEL"])
-
-        # clear the goal queue:
-        self.goal_queue.clear()
-
-        # formulate a reset message:
+        ##### SEND GLOBAL RESET SIGNAL #####
+        # formulate and send the reset message:
         msg      = String()
         msg.data = "reset"
-
-        # publish the message:
         self.node.start_pub.publish(msg)
+        time.sleep(1)
 
-        # re-enable the buttons:
-        time.sleep(2)
-        self.button_handling.emit()
+        ##### RESET THE POSITIONS OF EACH AGENT #####
+        # if there are no agents:
+        if not self.agent_queue:
+            self.node.get_logger().info("No agents to be reset!")
+        else:
+            # for each agent in the queue:
+            for agent in self.agent_queue:
+                # get the x and y position of the agent:
+                _, agent_x_pos, agent_y_pos = self.agent_queue[agent]
 
-    # method for pressing the randomize mission buttom:
-    def _on_randomize_mission_clicked(self):
-        """
-        Method for when the randomize mission button has been hit. Locks all buttons on the GUI and instantiates another thread,
-        which calls the ``_randomize_mission_process()`` method.
-        """
-        # lock buttons:
-        self._lock_buttons()
+                # move the position of the agent:
+                subprocess.run(["ign", "service", "-s", f"/world/{self.node.world_name}/set_pose",
+                                "--reqtype", "ignition.msgs.Pose",
+                                "--reptype", "ignition.msgs.Boolean",
+                                "--timeout", "2000",
+                                "--req", f"name: '{agent}', position: {{x: {agent_x_pos}, y: {agent_y_pos}, z: {0.0}}}, orientation: {{x: {0.0}, y: {0.0}, z: {0.0}, w: {0.0}}}"],
+                                stdout = subprocess.DEVNULL,
+                                stderr = subprocess.DEVNULL)
 
-        # use another thread to call the button execution:
-        threading.Thread(target = self._randomize_mission_process, args = (), daemon = True).start()
+                # reset the odometry of that agent:
+                self._kill_namespaced_node(namespace = agent)
 
-    # method for randomize mission process:
-    def _randomize_mission_process(self):
-        """
-        Method responsible for queuing a randomized mission. This method is ran within its own thread. Samples ten randomized goal positions and requirements,
-        and then appends these to the goal queue.
-        """
-        # clear the goal queue:
-        self.goal_queue.clear()
-
-        # goal types:
-        goal_types = ["typeA", "typeB"]
-
-        # sample ten random goal positions from the set of possible positions:
-        goals = random.sample(self.node.goal_points, 3)
+                # call the launch file for the odometry nodes:
+                self.odom_process = subprocess.Popen(["ros2", "launch", "mrs_robot_launcher", "odom_launch.py", f"agent_name:={agent}"],
+                                                       stdout=subprocess.DEVNULL,
+                                                       stderr=subprocess.DEVNULL)
         
-        # for every goal that was sampled from the points:
-        for goal in goals:
-            # form a goal:
-            goal_type = random.choice(goal_types)
-            x = goal[0]
-            y = goal[1]
+        ##### RESET THE GOAL, IF IT EXISTS #####
+        # check for goal publisher:
+        result = subprocess.run(["pgrep", "-f", "robot_state_pub.*__ns:=/goal"],
+                                capture_output = True,
+                                text = True)
+        
+        # if there is a process:
+        if result.stdout.strip():
+            # kill the goal publisher if it exists
+            self._kill_namespaced_node(namespace = "goal", node = "robot_state_pub")
 
-            # append to the queue:
-            self.goal_queue[f"goal_{len(self.goal_queue) + 1}"] = [goal_type, x, y]
-
-        # let user know that a mission has been formed:
-        self.node.get_logger().info("Mission formed!")
+            # remove the goal from Gazebo:
+            subprocess.run(["ign", "service", "-s", f"/world/{self.node.world_name}/remove",
+                            "--reqtype", "ignition.msgs.Entity",
+                            "--reptype", "ignition.msgs.Boolean",
+                            "--timeout", "2000",
+                            "--req", f"name: 'goal' type: MODEL"],
+                            stdout = subprocess.DEVNULL,
+                            stderr = subprocess.DEVNULL)
 
         # re-enable the buttons:
-        time.sleep(2)
+        time.sleep(0.5)
         self.button_handling.emit()
+
+    # # method for pressing the randomize mission buttom:
+    # def _on_randomize_mission_clicked(self):
+    #     """
+    #     Method for when the randomize mission button has been hit. Locks all buttons on the GUI and instantiates another thread,
+    #     which calls the ``_randomize_mission_process()`` method.
+    #     """
+    #     # lock buttons:
+    #     self._lock_buttons()
+
+    #     # use another thread to call the button execution:
+    #     threading.Thread(target = self._randomize_mission_process, args = (), daemon = True).start()
+
+    # # method for randomize mission process:
+    # def _randomize_mission_process(self):
+    #     """
+    #     Method responsible for queuing a randomized mission. This method is ran within its own thread. Samples ten randomized goal positions and requirements,
+    #     and then appends these to the goal queue.
+    #     """
+    #     # clear the goal queue:
+    #     self.goal_queue.clear()
+
+    #     # goal types:
+    #     goal_types = ["typeA", "typeB"]
+
+    #     # sample ten random goal positions from the set of possible positions:
+    #     points = random.sample(self.node.goal_points, 3 + len(self.node.names))
+    #     goals  = points[0:3]
+    #     agents = points[3:]
+        
+    #     # for every goal that was sampled from the points:
+    #     for goal in goals:
+    #         # form a goal:
+    #         goal_type = random.choice(goal_types)
+    #         x = goal[0]
+    #         y = goal[1]
+
+    #         # append to the queue:
+    #         self.goal_queue[f"goal_{len(self.goal_queue) + 1}"] = [goal_type, x, y]
+
+    #     # # for every agent in the system:
+    #     # for agent, _ in enumerate(self.node.names):
+    #     #     # get the position of the agent:
+    #     #     self.node.get_logger().info(f"agent is: {agent} | type: {type(agent)}\n")
+    #     #     name = self.node.names[agent]
+    #     #     pos  = agents[agent]
+    #     #     yaw  = self.agent_yaws[name]
+    #     #     x, y = pos[0], pos[1]
+    #     #     qz = np.sin(yaw / 2)
+    #     #     qw = np.cos(yaw / 2)
+
+    #     #     # overwrite current positions of agent in dict for future resetting:
+    #     #     self.node.agent_positions[name] = pos
+
+    #     #     # move the agent to the desired location:
+    #     #     subprocess.run(["ign", "service", "-s", f"/world/{self.node.world_name}/set_pose",
+    #     #                 "--reqtype", "ignition.msgs.Pose",
+    #     #                 "--reptype", "ignition.msgs.Boolean",
+    #     #                 "--timeout", "2000",
+    #     #                 "--req", f"name: '{name}', position: {{x: {x}, y: {y}, z: {0.0}}}, orientation: {{x: {0.0}, y: {0.0}, z: {qz}, w: {qw}}}"])
+            
+    #     #     # kill the nodes related to the odometry of that agent:
+    #     #     self._kill_namespaced_node(namespace = name)
+
+    #     #     # call the launch file for the odometry nodes:
+    #     #     self.odom_process = subprocess.Popen(["ros2", "launch", "mrs_robot_launcher", "odom_launch.py", f"agent_name:={name}"])
+
+    #     # let user know that a mission has been formed:
+    #     self.node.get_logger().info("Mission formed!")
+
+    #     # re-enable the buttons:
+    #     time.sleep(2)
+    #     self.button_handling.emit()
 
     # method for pressing the start sim button:
     def _on_start_sim_clicked(self):
@@ -497,10 +752,9 @@ class MainWindow(QWidget):
             self._publish_next_goal()
         else:
             self.node.get_logger().info("No goals provided for the current mission!")
-
-        # re-enable buttons:
-        time.sleep(2)
-        self.button_handling.emit()
+            # re-enable buttons:
+            time.sleep(0.5)
+            self.button_handling.emit()
 
     # method for publishing goals:
     def _publish_next_goal(self):
@@ -526,11 +780,17 @@ class MainWindow(QWidget):
                         "--reqtype", "ignition.msgs.Entity",
                         "--reptype", "ignition.msgs.Boolean",
                         "--timeout", "2000",
-                        "--req", f"name: 'goal' type: MODEL"])
+                        "--req", f"name: 'goal' type: MODEL"],
+                        stdout = subprocess.DEVNULL,
+                        stderr = subprocess.DEVNULL)
 
         # if queue is empty:
         if not self.goal_queue:
             self.node.get_logger().info("Goal queue is empty, current simulation is complete!")
+
+            # re-enable buttons:
+            time.sleep(0.5)
+            self.button_handling.emit()
             return
 
         # pop the first item from the queue:
@@ -543,7 +803,9 @@ class MainWindow(QWidget):
                           "goal_name:=goal", 
                           f"goal_type:={goal_data[0]}",
                           f"goal_initial_x_pos:={goal_data[1]}",
-                          f"goal_initial_y_pos:={goal_data[2]}"])
+                          f"goal_initial_y_pos:={goal_data[2]}"],
+                          stdout = subprocess.DEVNULL,
+                          stderr = subprocess.DEVNULL)
         
         # increment the goal_number:
         self.goal_number += 1
