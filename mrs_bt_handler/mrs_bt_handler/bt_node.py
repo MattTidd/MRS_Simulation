@@ -4,7 +4,7 @@ from rclpy.node import Node
 from rclpy.action import ActionClient
 from rclpy.executors import MultiThreadedExecutor
 from nav_msgs.msg import Odometry
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseStamped, TwistStamped
 from std_msgs.msg import String
 
 import subprocess
@@ -133,6 +133,9 @@ class BTNode(Node):
             )
 
         ##### create publishers: #####
+        # cmd_vel publisher:
+        self.cmd_vel_pub = self.create_publisher(TwistStamped, f"/{self.agent_name}/cmd_vel", 10)
+
         # publisher for bid of an agent:
         self.bid_pub  = self.create_publisher(Bid, f"/{self.agent_name}/bid", 10)
         self.goal_pub = self.create_publisher(Goal, "/goal", 10)
@@ -263,6 +266,15 @@ class BTNode(Node):
                 # drop the stale odom reference:
                 self.latest_odom = None
 
+                # drop the stale goal reference:
+                self.goal = None
+
+                # clear the dict of bids:
+                self.all_bids = {}
+
+                # reset new goal flag:
+                self.new_goal = False
+
     # define method for publishing a bid:
     def publish_bid(self, suitability : float):
         """
@@ -383,6 +395,12 @@ class BTNode(Node):
         else:
             pass
             # self.get_logger().warn("kill_policy method called but no active process found.")
+
+        # publish a zero velocity:
+        cmd = TwistStamped()
+        cmd.header.stamp = self.get_clock().now().to_msg()
+        self.cmd_vel_pub.publish(cmd)
+        time.sleep(0.05)
 
 # define the main function:
 def main():
