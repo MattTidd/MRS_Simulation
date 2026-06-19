@@ -101,7 +101,7 @@ class GuiNode(Node):
         self.get_logger().info("GUI node started")
 
         # declare parameters:
-        self.declare_parameter("world_name", "world_3")
+        self.declare_parameter("world_name", "world_3.sdf")
 
         # add parameters to the class:
         world_path           = self.get_parameter("world_name").value
