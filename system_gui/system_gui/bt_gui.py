@@ -1,11 +1,8 @@
 # import packages:
 import re
 import sys
-import json
 import tempfile
 import yaml
-import os
-import random
 import time
 import threading
 import signal
@@ -90,11 +87,8 @@ class GuiNode(Node):
         """
         Constructor for the node. Declares and adds parameters to the class, and instantiates subscribers/publishers. 
 
-        :param positions: List containing the starting positions of each agent, measured globally. 
-        :type positions: list
-
-        :param agent_names: List containing the names of each of the agents. 
-        :type agent_names: list
+        :param world_name: Name of the world to be used. This parameter is used for Gazebo service calls.
+        :type world_name: string
         
         """
         # inherit from parent class:
@@ -108,16 +102,10 @@ class GuiNode(Node):
 
         # declare parameters:
         self.declare_parameter("world_name", "world_3")
-        self.declare_parameter("points_path", "")
 
         # add parameters to the class:
         world_path           = self.get_parameter("world_name").value
-        points_path          = self.get_parameter("points_path").value
         self.world_name      = re.split(r'[/.]', world_path)[-2]
-
-        # get list of points in default world:
-        with open(points_path) as f:
-            self.goal_points = json.load(f)["goals"]
     
         # establish subscribers:
         self.goal_sub  = self.create_subscription(Goal, "/goal", self._goal_callback, 10)
@@ -154,7 +142,6 @@ class MainWindow(QWidget):
         """
         Constructor for the GUI. Instantiates the components within the system, and defines their layout within the window. 
         Also connects the functionality for the resetting of buttons.
-        
         """
         # inherit from parent class:
         super().__init__()
