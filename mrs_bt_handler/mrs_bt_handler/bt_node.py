@@ -75,7 +75,7 @@ class BTNode(Node):
         self.declare_parameter("num_agents", 2)
         self.declare_parameter("model_path", "")
         self.declare_parameter("goal_tolerance", 0.125)
-        self.declare_parameter("goal_timeout", 60.0)
+        self.declare_parameter("goal_timeout", 120.0)
 
         ##### add parameters to the class: #####
         self.agent_name        = self.get_parameter("agent_name").value
