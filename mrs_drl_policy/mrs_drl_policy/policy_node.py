@@ -33,7 +33,7 @@ class DRLPolicyNode(Node):
         self.declare_parameter("agent_initial_yaw", 0.0)
         self.declare_parameter('max_lin_vel', 0.6)
         self.declare_parameter('max_angular_vel', 0.9)
-        self.declare_parameter('goal_timeout', 60.0)
+        self.declare_parameter('goal_timeout', 120.0)
 
         # add parameters to class:
         self.agent_name                     =   self.get_parameter("agent_name").value
