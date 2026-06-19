@@ -507,8 +507,8 @@ class MainWindow(QWidget):
     def _kill_namespaced_node(self, namespace : str, node = None):
         """
         Method for killing namespaced nodes. Does this by running a ``"kill"`` subprocess on the ``PID`` of the
-        node process. Either accepts single nodes, or if no single node was passed, can be used to kill all nodes
-        relating to the odometry of the agent.
+        node process. Accepts single nodes, with the idea being that the user loops over a list of nodes, killing
+        a singular node each time.
 
         :param namespace: Namespace used by the node to be killed. 
         :type namespace: str
@@ -516,40 +516,23 @@ class MainWindow(QWidget):
         :param node: Individual node to be killed.
         :type node: str
         """
-        # list the process names of the odometry executables:
-        nodes = ["ekf_node", "covariance_filter_node", "rf2o_laser_odom"]
+        # handle both namespaced and non-namespaced nodes:
+        pattern = f"{node}.*__ns:=/{namespace}" if namespace else node
 
-        # if the user passes a single node:
-        if node:
-            # pull the PID of the node that they are looking for:
-            result = subprocess.run(
-                    ["pgrep", "-f", f"{node}.*__ns:=/{namespace}"],
-                    capture_output = True,
-                    text = True
-                )
-            
-            # back out the PID:
-            pid = result.stdout.strip()
+        # pull the PID of the node:
+        result = subprocess.run(
+            ["pgrep", "-f", pattern],
+            capture_output = True,
+            text = True
+        )
 
-            # if this process exists, kill it:
-            if pid:
-                subprocess.run(["kill", pid])
-        else:
-            # for every executable:
-            for executable in nodes:
-                # find the executable that corresponds to that agent:
-                result = subprocess.run(
-                    ["pgrep", "-f", f"{executable}.*__ns:=/{namespace}"],
-                    capture_output = True,
-                    text = True
-                )
+        # pull the PID:
+        pids = result.stdout.strip().split()
 
-                # back out the PID:
-                pid = result.stdout.strip()
-
-                # if the process exists, kill it
-                if pid:
-                    subprocess.run(["kill", pid])
+        # if that PID exists, kill it:
+        if pids:
+            subprocess.run(["kill", "-9"] + pids)
+            time.sleep(0.1)
 
     # method for pressing the reset sim button:
     def _on_reset_sim_clicked(self):
@@ -602,7 +585,9 @@ class MainWindow(QWidget):
                                 stderr = subprocess.DEVNULL)
 
                 # reset the odometry of that agent:
-                self._kill_namespaced_node(namespace = agent)
+                nodes = ["ekf_node", "covariance_filter_node", "rf2o_laser_odom"]
+                for node in nodes:
+                    self._kill_namespaced_node(namespace = agent, node = node)
 
                 # call the launch file for the odometry nodes:
                 self.odom_process = subprocess.Popen(["ros2", "launch", "mrs_robot_launcher", "odom_launch.py", f"agent_name:={agent}"],
