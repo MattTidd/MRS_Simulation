@@ -5,7 +5,7 @@ from rclpy.action import ActionClient
 from rclpy.executors import MultiThreadedExecutor
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import PoseStamped, TwistStamped
-from std_msgs.msg import String
+from std_msgs.msg import String, Bool
 
 import subprocess
 import signal
@@ -99,8 +99,12 @@ class BTNode(Node):
         self.all_bids:              dict                        =     {}        # dictionary of form {agent_name : suitability_score}
         self.simulation_started:    bool                        =     False     # flag for whether the simulation has started or not
         self.new_goal:              bool                        =     False     # flag for whether a new goal has arrived or not
+        self.nav_failed:            bool                        =     False     # flag for navigational success
         self.policy_process                                     =     None      # handle for the policy subprocess
         self.goal_process                                       =     None      # handle for the goal subprocess
+        self.rebroadcast_count                                  =     0         # int counter for goal rebroadcasting
+        self.reset_requested                                    =     False     # flag for whether a reset has been requested
+        self.reset_complete                                     =     False     # flag for whether the reset of an agent is complete
 
         ##### create subscribers: #####
         # subscriber for the goal:
@@ -132,13 +136,21 @@ class BTNode(Node):
                 lambda msg, n = name: self._bid_callback(msg, n), 10
             )
 
+        # subscriber for reset complete signal:
+        self.reset_complete_sub = self.create_subscription(Bool, "/reset_complete", self._reset_complete_callback, 10)
+
         ##### create publishers: #####
         # cmd_vel publisher:
         self.cmd_vel_pub = self.create_publisher(TwistStamped, f"/{self.agent_name}/cmd_vel", 10)
 
         # publisher for bid of an agent:
         self.bid_pub  = self.create_publisher(Bid, f"/{self.agent_name}/bid", 10)
+
+        # publisher for the goal:
         self.goal_pub = self.create_publisher(Goal, "/goal", 10)
+
+        # publisher for resetting:
+        self.reset_pub = self.create_publisher(String, "/reset_agent", 10)
 
         # ##### action client for navigation: #####
         # self.nav_client = ActionClient(self, NavigateToGoal, "navigate_to_goal")
@@ -166,7 +178,7 @@ class BTNode(Node):
             self.tree.tick()
             time.sleep(1 / frequency)
 
-    # define goal callback method:
+    # define the goal callback method:
     def _goal_callback(self, msg : Goal):
         """
         Callback method called by the goal subscriber. Adds a received goal pose to the class, as well as its required capability.
@@ -192,6 +204,13 @@ class BTNode(Node):
 
         # add the goal required capabilities to the class:
         self.required_capability = msg.required_capability
+
+        # add the goal id to the class:
+        self.goal_id = msg.id
+
+        # reset rebroadcast counter on fresh goals:
+        if "_rebroadcast" not in msg.id:
+            self.rebroadcast_count = 0
 
         # reset the list of bids upon receiving a new goal:
         self.all_bids = {}
@@ -275,6 +294,18 @@ class BTNode(Node):
                 # reset new goal flag:
                 self.new_goal = False
 
+    # define the reset complete callback method:
+    def _reset_complete_callback(self, msg : Bool):
+        """
+        Reset callback used by the reset complete subscriber. Flips the ``reset_complete`` flag based on the 
+        boolean value contained in the message.
+
+        :param msg: Reset complete message that is subscribed to.
+        :type msg: Bool
+        """
+        # flip the flag based on the value of the topic:
+        self.reset_complete = msg.data
+
     # define method for publishing a bid:
     def publish_bid(self, suitability : float):
         """
@@ -332,6 +363,72 @@ class BTNode(Node):
         self.goal_pub.publish(msg)
         self.get_logger().info(f"{self.agent_name.capitalize()} broadcasting goal completion\n\n")
 
+    # define method for rebroadcasting the goal on failure:
+    def rebroadcast_goal(self):
+        """
+        Republishes the current goal onto /goal to retrigger bidding on all agents. 
+        Called by the ``RecallAuction`` behaviour when navigation fails.
+        """
+        # check for None type goal:
+        if self.goal is None:
+            self.get_logger().warn("rebroadcast_goal called but goal is None — cannot rebroadcast.")
+            return
+        
+        # log to user:
+        self.get_logger().warn(f"{self.agent_name}: rebroadcasting goal to retrigger auction...")
+        
+        # form and publish the goal:
+        msg = Goal()
+        base_id = self.goal_id.split("_rebroadcast")[0]
+        msg.id = f"{base_id}_rebroadcast_{self.rebroadcast_count}"
+        msg.pose = self.goal
+        msg.required_capability = self.required_capability
+        self.goal_pub.publish(msg)
+
+        # advance rebroadcast counter:
+        self.rebroadcast_count += 1
+
+    # define method for resetting the agent:
+    def reset_agent(self):
+        """
+        Method used to call agent resetting. Flips the ``reset_complete`` flag to false, and then 
+        publishes the name of the agent to be reset, which is interpreted externally by the GUI.
+        """
+        # log to user:
+        self.get_logger().info(f"{self.agent_name}: hit obstacle, moving to spawn...")
+
+        # flip the reset complete flag:
+        self.reset_complete = False
+
+        # publish the reset signal:
+        reset_msg = String()
+        reset_msg.data = self.agent_name
+        self.reset_pub.publish(reset_msg)
+
+    # define method for monitoring goal process:
+    def _monitor_goal_process(self):
+        """
+        Waits for the goal_process subprocess to exit, then sets nav_failed based on its 
+        return code. Non-zero means that navigation has failed.
+        """
+        # check for a goal_process:
+        if self.goal_process is None:
+            return
+        
+        # simply wait until there is a returncode:
+        self.goal_process.wait()
+
+        # if there is a non-zero returncode:
+        if self.goal_process.returncode not in (0, -15):    # -15 is termination via SIGTERM (success)
+            # log to user:
+            self.get_logger().warn(
+            f"{self.agent_name}: goal_client exited with code: "
+            f"{self.goal_process.returncode}, flagging nav_failed."
+            )
+
+            # flip flag:
+            self.nav_failed = True
+
     # define method for spinning the navigation policy and goal nodes up:
     def spin_up_policy(self):
         """
@@ -356,6 +453,10 @@ class BTNode(Node):
 
             # spin up the goal client, similar to the GUI:
             self.goal_process = subprocess.Popen(["ros2", "run", "mrs_drl_policy", "goal_client", str(dx), str(dy), f"{self.goal_tolerance}"], start_new_session = True)
+
+            # reset failure flag, start monitor thread:
+            self.nav_failed = False
+            threading.Thread(target = self._monitor_goal_process, args = (), daemon = True).start()
 
     # define method for killing the policy node:
     def kill_policy(self):
