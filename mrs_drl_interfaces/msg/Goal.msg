@@ -1,2 +1,3 @@
+string id
 geometry_msgs/PoseStamped pose
 string required_capability
