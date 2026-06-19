@@ -11,7 +11,7 @@ import rclpy
 import numpy as np
 from rclpy.node import Node
 from mrs_drl_interfaces.msg import Goal
-from std_msgs.msg import String
+from std_msgs.msg import String, Bool
 
 # gui-specific packages:
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QGridLayout, QComboBox, QPushButton, QGroupBox, QLineEdit
@@ -109,10 +109,12 @@ class GuiNode(Node):
     
         # establish subscribers:
         self.goal_sub  = self.create_subscription(Goal, "/goal", self._goal_callback, 10)
+        self.reset_sub = self.create_subscription(String, "/reset_agent", self._reset_agent_callback, 10)
 
         # establish publishers:
-        self.goal_pub   = self.create_publisher(Goal, "/goal", 10)
-        self.start_pub  = self.create_publisher(String, "/simulation_start", 10)
+        self.goal_pub           = self.create_publisher(Goal, "/goal", 10)
+        self.start_pub          = self.create_publisher(String, "/simulation_start", 10)
+        self.reset_complete_pub = self.create_publisher(Bool, "/reset_complete", 10)
 
     # define a callback for the goal subscriber:
     def _goal_callback(self, msg : Goal):
@@ -126,6 +128,53 @@ class GuiNode(Node):
         # if receiving an empty goal message:
         if msg.required_capability == "":
             self.gui._publish_next_goal()
+
+    # define a callback for resetting agents:
+    def _reset_agent_callback(self, msg : String):
+        """
+        Callback method used by the reset agent subscriber. Extracts the desired agent from the message, 
+        gets its position within space, and then moves the agent back to that spawn location. It then deletes the 
+        odometry nodes of that agent, and recalls them. After waiting a fixed delay amount, it then formulates and 
+        publishes a reset complete message.
+
+        :param msg: String message that is subscribed to.
+        :type msg: String
+        """
+        # get the name of the agent to be reset:
+        agent_name = msg.data
+
+        # get the positon of that agent:
+        agent_pos_x = self.gui.agent_queue[agent_name][1]
+        agent_pos_y = self.gui.agent_queue[agent_name][2]
+        qz = round(np.sin(0.0 / 2), 3)
+        qw = round(np.cos(0.0 / 2), 3)
+
+        # move the agent back to its spawn location:
+        subprocess.Popen([
+            "ign", "service", "-s", f"/world/{self.world_name}/set_pose",
+            "--reqtype", "ignition.msgs.Pose",
+            "--reptype", "ignition.msgs.Boolean",
+            "--timeout", "1000",
+            "--req", f"name: '{agent_name}' position: {{x: {agent_pos_x}, y: {agent_pos_y}, z: {0.0}}} orientation: {{x: {0.0}, y: {0.0}, z: {qz}, w: {qw}}}"
+        ])
+
+        # delete its odometry nodes, recall them:
+        nodes = ["ekf_node", "covariance_filter_node", "rf2o_laser_odom"]
+        for node in nodes:
+            self.gui._kill_namespaced_node(namespace = agent_name, node = node)
+
+        # recall the odometry launch file:
+        self.odom_process = subprocess.Popen(["ros2", "launch", "mrs_robot_launcher", "odom_launch.py", f"agent_name:={agent_name}"],
+                                                       stdout=subprocess.DEVNULL,
+                                                       stderr=subprocess.DEVNULL)
+        
+        # add a fixed delay while the odometry loads:
+        time.sleep(5.0)
+
+        # formulate and publish reset complete message:
+        msg = Bool()
+        msg.data = True
+        self.reset_complete_pub.publish(msg)
 
 # class for the actual GUI:
 class MainWindow(QWidget):
