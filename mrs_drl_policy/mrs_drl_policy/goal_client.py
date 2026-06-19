@@ -86,7 +86,8 @@ class GoalClient(Node):
             f'{result.message} | Total distance travelled (client): {result.total_distance: 5.3f}')
         
         # set done flag to true:
-        self._done = True
+        self._success = result.success
+        self._done    = True
 
     # define method for cancelling requests:
     def cancel(self):
@@ -128,9 +129,11 @@ def main():
     except KeyboardInterrupt:
         node.cancel()
     finally:
+        success = getattr(node, '_success', False)
         node.destroy_node()
         if rclpy.ok():
             rclpy.shutdown()
+        sys.exit(0 if success else 1)
 
 # main:
 if __name__ == "__main__":
