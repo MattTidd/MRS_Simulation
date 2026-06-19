@@ -166,8 +166,8 @@ class SubmitBid(py_trees.behaviour.Behaviour):
         :param bid_published: A boolean flag to track whether a bid has been published or not.
         :type bid_published: bool
 
-        :param last_goal: A variable to track whether the current goal differs from the last goal.
-        :type last_goal: None
+        :param last_goal_id: A variable to track whether the current goal differs from the last goal.
+        :type last_goal_id: None
         
         """
         # inherit from parent class:
@@ -179,7 +179,7 @@ class SubmitBid(py_trees.behaviour.Behaviour):
         self.model_path     = os.path.join(model_path, "model.pth")
         self.scaler_path    = os.path.join(model_path, "scaler.pkl")
         self.bid_published  = False
-        self.last_goal      = None
+        self.last_goal_id   = None
 
     # define method for setting up the model:
     def setup(self, **kwargs):
@@ -219,10 +219,10 @@ class SubmitBid(py_trees.behaviour.Behaviour):
 
         - Specifically, this method resets the ``bid_published`` flag and updates the ``last_goal`` value, only when the goal has changed.
         """
-        # reset only if the goal has changed:
-        if self.node.goal != self.last_goal:
-            self.bid_published  = False
-            self.last_goal      = self.node.goal
+        # reset only if the goal ID has changed:
+        if self.node.goal_id != self.last_goal_id:
+            self.bid_published = False
+            self.last_goal_id  = self.node.goal_id
     
     # define method for updating the bid:
     def update(self):
@@ -365,7 +365,6 @@ class RemainIdle(py_trees.behaviour.Behaviour):
         :returns: ``py_trees.common.Status.SUCCESS`` while agent idles.
         
         """
-
         # return success:
         return py_trees.common.Status.SUCCESS
     
@@ -480,6 +479,19 @@ class NavigateToGoal(py_trees.behaviour.Behaviour):
             self.node.get_logger().info("No odom or latest goal")
             return py_trees.common.Status.RUNNING
         
+        # check for navigation failure:
+        if self.node.nav_failed:
+            # log to user:
+            self.node.get_logger().warn(
+                f"{self.node.agent_name}: navigation reported failure by goal client"
+            )
+
+            # reset flag to prevent retriggering:
+            self.node.nav_failed = False
+
+            # report failure:
+            return py_trees.common.Status.FAILURE
+        
         # check for a timeout:
         if self._start_time is not None and (time.time() - self._start_time) > self.timeout:
             self.node.get_logger().warn(f"{self.node.agent_name} navigation timed out.")
@@ -563,18 +575,29 @@ class RecallAuction(py_trees.behaviour.Behaviour):
     # define update method:
     def update(self):
         """
-        Update method of the behaviour. Clears the ``all_bids`` dict and the current ``goal`` from the parent node. 
-        - Returns ``py_trees.common.Status.SUCCESS`` upon clearing these from the parent class.
-
-        :returns: ``py_trees.common.Status.SUCCESS`` once clearing bid and goal related parameters from the parent node.
+        Update method of the behaviour. If a reset has not been requested yet, it sends a request to reset the agent
+        that failed, and returns ``py_trees.common.Status.RUNNING`` while it waits for the agent to reset. Once complete,
+        it rebroadcasts the goal and returns ``py_trees.common.Status.SUCCESS``.
         """
-        # log to user:
-        self.node.get_logger().warn(f"{self.node.agent_name} failed navigation, recalling auction")
+        # if a reset hasn't been requested yet:
+        if not self.node.reset_requested:
+            # call the reset:
+            self.node.get_logger().info(f"Resetting {self.node.agent_name}!")
+            self.node.reset_agent()
+            self.node.reset_requested = True
 
-        # clear bids, and goal:
-        self.node.all_bids = {}
-        self.node.goal     = None
+            # return running while resetting starts:
+            return py_trees.common.Status.RUNNING
+        
+        # wait for the resetting to complete:
+        if not self.node.reset_complete:
+            return py_trees.common.Status.RUNNING
 
-        # return success on clearing:
+        # resetting complete, rebroadcast the goal:
+        self.node.get_logger().info(f"Resetting complete, rebroadcasting goal...")
+        self.node.reset_requested = False
+        self.node.rebroadcast_goal()
+
+        # return success on agent reset + rebroadcasting goal:
         return py_trees.common.Status.SUCCESS
 
