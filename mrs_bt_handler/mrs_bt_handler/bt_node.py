@@ -15,7 +15,7 @@ import threading
 import time
 
 from mrs_drl_interfaces.action import NavigateToGoal
-from mrs_drl_interfaces.msg import Bid, Goal
+from mrs_drl_interfaces.msg import Bid, Goal, AgentMetrics
 from mrs_bt_handler.trees.agent_tree import create_tree
 
 # define a class for the node:
@@ -75,7 +75,7 @@ class BTNode(Node):
         self.declare_parameter("num_agents", 2)
         self.declare_parameter("model_path", "")
         self.declare_parameter("goal_tolerance", 0.125)
-        self.declare_parameter("goal_timeout", 120.0)
+        self.declare_parameter("goal_timeout", 60.0)
 
         ##### add parameters to the class: #####
         self.agent_name        = self.get_parameter("agent_name").value
@@ -90,21 +90,23 @@ class BTNode(Node):
         self.goal_timeout      = self.get_parameter("goal_timeout").value
 
         ##### storage for the important states that are used by the node/tree: #####
-        self.goal:                  PoseStamped     |   None    =     None      # current pose of goal
-        self.latest_odom:           Odometry        |   None    =     None      # latest odometry
-        self.distance_to_goal:      float                       =     0.0       # distance to the current goal
-        self.total_distance:        float                       =     0.0       # total distance travelled
-        self.load_history:          float                       =     0.0       # load history (number of tasks completed thus far)
-        self.suitability:           float                       =     0.0       # suitability for the task at hand
-        self.all_bids:              dict                        =     {}        # dictionary of form {agent_name : suitability_score}
-        self.simulation_started:    bool                        =     False     # flag for whether the simulation has started or not
-        self.new_goal:              bool                        =     False     # flag for whether a new goal has arrived or not
-        self.nav_failed:            bool                        =     False     # flag for navigational success
-        self.policy_process                                     =     None      # handle for the policy subprocess
-        self.goal_process                                       =     None      # handle for the goal subprocess
-        self.rebroadcast_count                                  =     0         # int counter for goal rebroadcasting
-        self.reset_requested                                    =     False     # flag for whether a reset has been requested
-        self.reset_complete                                     =     False     # flag for whether the reset of an agent is complete
+        self.goal:                  PoseStamped     |   None    =       None        # current pose of goal
+        self.latest_odom:           Odometry        |   None    =       None        # latest odometry
+        self.distance_to_goal:      float                       =       0.0         # distance to the current goal
+        self.total_distance:        float                       =       0.0         # total distance travelled
+        self.load_history:          float                       =       0.0         # load history (number of tasks completed thus far)
+        self.suitability:           float                       =       0.0         # suitability for the task at hand
+        self.all_bids:              dict                        =       {}          # dictionary of form {agent_name : suitability_score}
+        self.simulation_started:    bool                        =       False       # flag for whether the simulation has started or not
+        self.new_goal:              bool                        =       False       # flag for whether a new goal has arrived or not
+        self.nav_failed:            bool                        =       False       # flag for navigational success
+        self.policy_process                                     =       None        # handle for the policy subprocess
+        self.goal_process                                       =       None        # handle for the goal subprocess
+        self.rebroadcast_count                                  =       0           # int counter for goal rebroadcasting
+        self.reset_requested                                    =       False       # flag for whether a reset has been requested
+        self.reset_complete                                     =       False       # flag for whether the reset of an agent is complete
+        self.collision_count                                    =       0           # counter for collisions
+        self.timeout_count                                      =       0           # counter for timeouts       
 
         ##### create subscribers: #####
         # subscriber for the goal:
@@ -139,6 +141,9 @@ class BTNode(Node):
         # subscriber for reset complete signal:
         self.reset_complete_sub = self.create_subscription(Bool, "/reset_complete", self._reset_complete_callback, 10)
 
+        # subscriber for the mission complete signal:
+        self.metrics_sub = self.create_subscription(String, "/mission_complete", self._mission_complete_callback, 10)
+
         ##### create publishers: #####
         # cmd_vel publisher:
         self.cmd_vel_pub = self.create_publisher(TwistStamped, f"/{self.agent_name}/cmd_vel", 10)
@@ -151,6 +156,9 @@ class BTNode(Node):
 
         # publisher for resetting:
         self.reset_pub = self.create_publisher(String, "/reset_agent", 10)
+
+        # publisher for metrics:
+        self.metrics_pub = self.create_publisher(AgentMetrics, f"/agent_metrics", 10)
 
         # ##### action client for navigation: #####
         # self.nav_client = ActionClient(self, NavigateToGoal, "navigate_to_goal")
@@ -229,7 +237,7 @@ class BTNode(Node):
         """
         with self._odom_lock:
             # track the total distance that the agent has travelled:
-            if self.latest_odom is not None:
+            if self.latest_odom is not None and self.simulation_started:
                 # get previous values:
                 x_prev = self.latest_odom.pose.pose.position.x
                 y_prev = self.latest_odom.pose.pose.position.y
@@ -239,6 +247,7 @@ class BTNode(Node):
                 y = msg.pose.pose.position.y
 
                 # compute total distance:
+                # self.get_logger().info(f"{self.agent_name} | x_prev: {x_prev} | y_prev: {y_prev} | x: {x} | y: {y}")
                 self.total_distance += np.sqrt((x - x_prev)**2 + (y - y_prev)**2)
             
             # advance latest odom via msg:
@@ -282,6 +291,10 @@ class BTNode(Node):
                 self.load_history   = 0.0
                 self.total_distance = 0.0
 
+                # reset the counters:
+                self.collision_count = 0
+                self.timeout_count   = 0
+
                 # drop the stale odom reference:
                 self.latest_odom = None
 
@@ -305,6 +318,31 @@ class BTNode(Node):
         """
         # flip the flag based on the value of the topic:
         self.reset_complete = msg.data
+
+    # define the callback for mission completion:
+    def _mission_complete_callback(self, msg : String):
+        """
+        Mission complete callback used by the mission complete subscriber. Publishes the metrics of the agent, 
+        so that they may be collated by the GUI node and saved for analysis.
+
+        :param msg: Mission complete message that is subscribed to.
+        :type msg: String
+        """
+        # debug at end:
+        self.get_logger().info(f"{self.agent_name} | TDT: {round(self.total_distance, 3)} | LH: {self.load_history}")
+
+        # instantiate a blank metric message:
+        metrics = AgentMetrics()
+
+        # populate metric message:
+        metrics.agent_name     = self.agent_name
+        metrics.total_distance = self.total_distance
+        metrics.load_history   = int(self.load_history)
+        metrics.collisions     = self.collision_count
+        metrics.timeouts       = self.timeout_count
+
+        # publish metrics:
+        self.metrics_pub.publish(metrics)
 
     # define method for publishing a bid:
     def publish_bid(self, suitability : float):
@@ -437,6 +475,9 @@ class BTNode(Node):
         """
         # if there is no active policy process:
         if self.policy_process is None or self.policy_process.poll() is not None:
+            # DEBUG:
+            self.get_logger().info(f"using model:{self.model_name}!")
+
             # spin up node, similar to GUI:
             self.policy_process = subprocess.Popen([
                 "ros2", "run", "mrs_drl_policy", "policy_node", "--ros-args", 
