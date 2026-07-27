@@ -1,0 +1,5 @@
+string agent_name
+float64 total_distance
+int32 load_history
+int32 collisions
+int32 timeouts

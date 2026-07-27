@@ -14,6 +14,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "action/NavigateToGoal.action"
   "msg/Bid.msg"
   "msg/Goal.msg"
+  "msg/AgentMetrics.msg"
   DEPENDENCIES geometry_msgs
 )
 
