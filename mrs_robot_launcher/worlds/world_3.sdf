@@ -632,5 +632,17 @@
       <name>warehouse_CardboardBox_16</name>
       <pose>4.6 9 0 0 0 0</pose>
     </include>
+
+    <include>
+      <uri>file:///home/matt/personal_research/src/mrs_robot_launcher/worlds/models/warehouse_CardboardBox</uri>
+      <name>warehouse_CardboardBox_17</name>
+      <pose>4.6 -0.1 0 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>file:///home/matt/personal_research/src/mrs_robot_launcher/worlds/models/warehouse_CardboardBox</uri>
+      <name>warehouse_CardboardBox_18</name>
+      <pose>4.6 -8.9 0 0 0 0</pose>
+    </include>
   </world>
 </sdf>
