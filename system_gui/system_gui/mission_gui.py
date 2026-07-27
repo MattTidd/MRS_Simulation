@@ -1,5 +1,6 @@
 # import packages:
-from mrs_drl_interfaces.msg import Goal
+from ament_index_python.packages import get_package_share_directory
+from mrs_drl_interfaces.msg import Goal, AgentMetrics
 from std_msgs.msg import String, Bool
 from rclpy.node import Node
 import numpy as np
@@ -14,7 +15,9 @@ import json
 import yaml
 import time
 import sys
+import csv
 import re
+import os
 
 # gui-specific packages:
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QGridLayout, QComboBox, QPushButton, QGroupBox, QLineEdit
@@ -107,12 +110,14 @@ class MissionGuiNode(Node):
         self.get_logger().info("GUI node started")
 
         # declare parameters:
-        self.declare_parameter("world_name", "world_3")
+        self.declare_parameter("world_name", "world_3.sdf")
         self.declare_parameter("points_path", "")
+        self.declare_parameter("drl_model", "SAC_001")
 
         # get parameter values:
-        world_path  = self.get_parameter("world_name").value
-        points_path = self.get_parameter("points_path").value
+        world_path     = self.get_parameter("world_name").value
+        points_path    = self.get_parameter("points_path").value
+        self.drl_model = self.get_parameter("drl_model").value
 
         # add parameters to the class:
         self.world_name = re.split(r'[/.]', world_path)[-2]
@@ -122,13 +127,22 @@ class MissionGuiNode(Node):
             self.agent_points = data["agents"]
 
         # establish subscribers:
-        self.goal_sub  = self.create_subscription(Goal, "/goal", self._goal_callback, 10)
-        self.reset_sub = self.create_subscription(String, "/reset_agent", self._reset_agent_callback, 10)
+        self.goal_sub    = self.create_subscription(Goal, "/goal", self._goal_callback, 10)
+        self.reset_sub   = self.create_subscription(String, "/reset_agent", self._reset_agent_callback, 10)
+        self.metrics_sub = self.create_subscription(AgentMetrics, "/agent_metrics", self._metrics_callback, 10)
 
         # establish publishers:
-        self.goal_pub           = self.create_publisher(Goal, "/goal", 10)
-        self.start_pub          = self.create_publisher(String, "/simulation_start", 10)
-        self.reset_complete_pub = self.create_publisher(Bool, "/reset_complete", 10)
+        self.goal_pub             = self.create_publisher(Goal, "/goal", 10)
+        self.start_pub            = self.create_publisher(String, "/simulation_start", 10)
+        self.reset_complete_pub   = self.create_publisher(Bool, "/reset_complete", 10)
+        self.mission_complete_pub = self.create_publisher(String, "/mission_complete", 10)
+
+        # define variables for storage:
+        self.agent_metrics      = {}
+        self.mission_start_time = None
+        self.makespan           = 0
+        self.reauction_count    = 0
+        self.goals_completed    = 0
 
     # define a callback for the goal subscriber:
     def _goal_callback(self, msg: Goal):
@@ -141,10 +155,14 @@ class MissionGuiNode(Node):
         """
         # if receiving an empty goal message:
         if msg.required_capability == "":
+            self.goals_completed += 1
             self.gui._publish_next_goal()
     
     # define a callback for resetting agents:
     def _reset_agent_callback(self, msg: String):
+        # increment the re-auction counter:
+        self.reauction_count += 1
+
         # get the name of the agent to be reset:
         agent_name = msg.data
 
@@ -180,6 +198,55 @@ class MissionGuiNode(Node):
         msg = Bool()
         msg.data = True
         self.reset_complete_pub.publish(msg)
+
+    # define a callback for receiving metrics:
+    def _metrics_callback(self, msg: AgentMetrics):
+        # populate own dict using metrics message:
+        self.agent_metrics[msg.agent_name] = {
+            "distance"   : msg.total_distance,
+            "tasks"      : msg.load_history,
+            "collisions" : msg.collisions,
+            "timeouts"   : msg.timeouts
+        }
+
+        # dump metrics to CSV if all are in:
+        if len(self.agent_metrics) == len(self.gui.agent_queue):
+            self._write_metrics()
+
+    # define a method for writing metrics to CSV:
+    def _write_metrics(self):
+        pass
+        # instantiate a row:
+        row = {
+            "goals_completed" : self.goals_completed,
+            "makespan"        : round(self.makespan, 3),
+            "reauctions"      : self.reauction_count
+        }
+
+        # for every agent in the metrics dict:
+        for agent_name, m in self.agent_metrics.items():
+            # append to the row:
+            row[f"{agent_name}_tasks"]      = m["tasks"]
+            row[f"{agent_name}_distance"]   = round(m["distance"], 3)
+            row[f"{agent_name}_collisions"] = m["collisions"]
+            row[f"{agent_name}_timeouts"]   = m["timeouts"]
+
+        # specify the path to write to:
+        path = os.path.expanduser("mission_metrics.csv")
+        write_header = not os.path.exists(path)
+
+        # write the row to a file:
+        with open(path, "a", newline = "") as f:
+            # make writer:
+            writer = csv.DictWriter(f, fieldnames = row.keys())
+            
+            # write the row:
+            if write_header:
+                writer.writeheader()
+            writer.writerow(row)
+
+        # log to user:
+        self.get_logger().info(f"Metrics written to {path}")
 
 # class for the actual GUI:
 class MainWindow(QWidget):
@@ -359,6 +426,7 @@ class MainWindow(QWidget):
         # extract mission information from the GUI:
         try:
             mission_length = int(self.mission_length_input.text())
+            half_length    = int(mission_length / 2)
             num_agents     = 4
         except Exception as e:
             self.node.get_logger().info(f"Provided mission specifications are invalid: {e}!")
@@ -374,20 +442,22 @@ class MainWindow(QWidget):
             return
         
         # sample the required number of points for both the number of agents and goals:
-        goal_points = random.sample(self.node.goal_points.copy(), k = mission_length)
+        goals = random.sample(self.node.goal_points.copy(), k = mission_length)
 
         ##### GOAL QUEUING #####
-        # index the points corresponding to the goals:
-        goals = goal_points[0:mission_length]
-
         # for every goal that was sampled from the points:
-        for goal in goals:
+        for goal_num, goal_points in enumerate(goals):
             # form the goal specifications:
             goal_name = f"goal_{len(self.goal_queue) + 1}"
-            goal_type = random.choice(types)
+
+            # alternate goal types:
+            if goal_num % 2 == 0:
+                goal_type = types[0]
+            else:
+                goal_type = types[1]
 
             # append goal to the queue:
-            self.goal_queue[goal_name] = [goal_type, goal[0], goal[1]]
+            self.goal_queue[goal_name] = [goal_type, goal_points[0], goal_points[1]]
 
         ##### AGENT QUEUING #####
         # set the types:
@@ -568,6 +638,7 @@ class MainWindow(QWidget):
                 self.bt_process = subprocess.Popen(["ros2", "launch", "mrs_bt_handler", "bt_launch.py",
                                                     f"agent_name:={agent}",
                                                     f"agent_type:={agent_type}",
+                                                    f"drl_model:={self.node.drl_model}",
                                                     f"num_agents:={len(self.agent_queue)}",
                                                     f"agent_initial_x:={agent_pos[0]}",
                                                     f"agent_initial_y:={agent_pos[1]}",
@@ -588,6 +659,10 @@ class MainWindow(QWidget):
         subprocess Gazebo service call. Following this, a goal message is built and published on the ``/goal`` topic, for agents to auction
         for.
         """
+        # start timer on mission start:
+        if self.goal_number == 0:
+            self.node.mission_start_time = time.time()
+            
         # if it is not the first goal:
         if self.goal_number != 0:
             # kill the previous goal:
@@ -607,13 +682,21 @@ class MainWindow(QWidget):
             # log to user:
             self.node.get_logger().info("Goal queue is empty, current simulation is complete!")
 
+            # get the makespan:
+            self.node.makespan = time.time() - self.node.mission_start_time
+
+            # signal agents to publish their metrics:
+            msg      = String()
+            msg.data = "complete"
+            self.node.mission_complete_pub.publish(msg)
+
+            # reset the goal counter:
+            self.goal_number = 0
+
             # re-enable buttons:
             time.sleep(0.5)
             self.button_handling.emit()
             return
-        
-        # # DEBUG ON GOAL QUEUE:
-        # self.node.get_logger().info(f"queue: {self.goal_queue}")
         
         # otherwise, pop the first item from the queue:
         key = next(iter(self.goal_queue))
