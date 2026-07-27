@@ -281,7 +281,7 @@ class SubmitBid(py_trees.behaviour.Behaviour):
             x_tensor    = torch.tensor(scaled_input, dtype = torch.float32).to(self.device)
             self.node.suitability = float(self.model(x_tensor).squeeze().cpu().numpy())
 
-        self.node.get_logger().info(f"{self.node.agent_name} suitability: {self.node.suitability:.4f} | TDT: {round(self.node.total_distance, 3)} | LH: {self.node.load_history} | DTT: {round(d_goal, 3)}")
+        self.node.get_logger().info(f"{self.node.agent_name} suitability: {self.node.suitability:.4f} | type: {self.node.agent_type} | TDT: {round(self.node.total_distance, 3)} | LH: {self.node.load_history} | DTT: {round(d_goal, 3)}")
 
         # publish the bid:
         self.node.publish_bid(self.node.suitability)
@@ -489,12 +489,21 @@ class NavigateToGoal(py_trees.behaviour.Behaviour):
             # reset flag to prevent retriggering:
             self.node.nav_failed = False
 
+            # increment collision counter:
+            self.node.collision_count += 1
+
             # report failure:
             return py_trees.common.Status.FAILURE
         
         # check for a timeout:
         if self._start_time is not None and (time.time() - self._start_time) > self.timeout:
+            # log to user:
             self.node.get_logger().warn(f"{self.node.agent_name} navigation timed out.")
+
+            # increment timeout counter:
+            self.node.timeout_count += 1
+
+            # report failure:
             return py_trees.common.Status.FAILURE
         
         # goal position -> IN THE GLOBAL FRAME:
