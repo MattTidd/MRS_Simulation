@@ -67,14 +67,14 @@ def generate_launch_description():
         name        = "bt_node",
         namespace   = agent_name,
         parameters  = [{
-            "agent_name"      : agent_name,
-            "agent_type"      : agent_type, 
-            "agent_initial_x" : agent_initial_x,
-            "agent_initial_y" : agent_initial_y,
+            "agent_name"        : agent_name,
+            "agent_type"        : agent_type, 
+            "agent_initial_x"   : agent_initial_x,
+            "agent_initial_y"   : agent_initial_y,
             "agent_initial_yaw" : agent_initial_yaw,
-            "model_name"      : drl_model,
-            "num_agents"      : num_agents,
-            "model_path"      : model_path
+            "model_name"        : drl_model,
+            "num_agents"        : num_agents,
+            "model_path"        : model_path
         }],
     )
 
